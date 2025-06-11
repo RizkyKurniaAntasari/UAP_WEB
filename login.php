@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($error_message): ?>
             <p class="mb-4 p-3 rounded-md text-sm text-red-700 bg-red-100 border border-red-200"><?php echo $error_message; ?></p>
         <?php endif; ?>
-        <form action="<?php echo $script_name; ?>/login.php" method="POST" class="space-y-4">
+        <form action="<?php echo $script_name; ?>/login.php" method="POST" class="space-y-4" autocomplete="off">
             <div class="text-left">
                 <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
                 <input type="text" name="username" id="username" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>

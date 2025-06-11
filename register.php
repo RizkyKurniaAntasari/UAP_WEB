@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($success_message): ?>
             <p class="mb-4 p-3 rounded-md text-sm text-green-700 bg-green-100 border border-green-200"><?php echo $success_message; ?></p>
         <?php endif; ?>
-        <form action="<?php echo $script_name; ?>/register.php" method="POST" class="space-y-4">
+        <form action="<?php echo $script_name; ?>/register.php" method="POST" class="space-y-4" autocomplete="off">
             <div class="text-left">
                 <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
                 <input type="text" name="username" id="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>
