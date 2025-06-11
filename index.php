@@ -1,99 +1,78 @@
-<?php
-// UAP_WEB/index.php
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beranda - Sistem Inventaris</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="public/css/style.css">
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
 
-session_start();
+    <nav class="bg-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.php" class="text-2xl font-bold text-blue-600">Sistem Inventaris</a>
+            <div>
+                <a href="index.php" class="text-gray-700 hover:text-blue-500 mx-2">Beranda</a>
+                <a href="login.php" class="text-gray-700 hover:text-blue-500 mx-2">Login</a>
+                <a href="register.php" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">Daftar</a>
+            </div>
+        </div>
+    </nav>
 
-require_once __DIR__ . '/src/db.php';
-require_once __DIR__ . '/src/functions.php';
+    <header class="bg-blue-600 text-white py-20 text-center">
+        <div class="container mx-auto px-6">
+            <h1 class="text-5xl font-extrabold mb-4">Kelola Inventaris Anda dengan Mudah!</h1>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">
+                Sistem inventaris sederhana untuk membantu Anda mencatat dan mengelola barang di gudang.
+            </p>
+            <div class="space-x-4">
+                <a href="#fitur" class="bg-white text-blue-600 px-6 py-3 rounded-full font-semibold hover:bg-gray-200 transition duration-300">Pelajari Fitur</a>
+                <a href="register.php" class="bg-green-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-green-700 transition duration-300">Daftar Gratis</a>
+            </div>
+        </div>
+    </header>
 
-// Load all controllers
-require_once __DIR__ . '/controllers/admin/Product_Controller.php';
-require_once __DIR__ . '/controllers/admin/Category_Controller.php';
-require_once __DIR__ . '/controllers/admin/Transaction_Controller.php';
-require_once __DIR__ . '/controllers/admin/User_Controller.php';
-require_once __DIR__ . '/controllers/pemasok/Supplier_Controller.php';
+    <section id="fitur" class="py-16 bg-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-4xl font-bold text-gray-800 mb-12">Mengapa Memilih Kami?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="bg-gray-50 p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="text-5xl text-blue-500 mb-4">📦</div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-2">Manajemen Barang Komprehensif</h3>
+                    <p class="text-gray-600">Catat detail barang, kategori, dan pemasok dengan mudah.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="text-5xl text-green-500 mb-4">📈</div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-2">Stok Otomatis & Akurat</h3>
+                    <p class="text-gray-600">Stok diperbarui otomatis setiap ada transaksi masuk/keluar.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-lg shadow-lg hover:shadow-xl transition duration-300">
+                    <div class="text-5xl text-purple-500 mb-4">📊</div>
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-2">Laporan Transaksi Mudah</h3>
+                    <p class="text-gray-600">Pantau pergerakan barang dengan laporan masuk dan keluar.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-$request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$script_name = dirname($_SERVER['SCRIPT_NAME']);
+    <section class="py-16 bg-blue-500 text-white text-center">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold mb-4">Siap Mengatur Inventaris Anda?</h2>
+            <p class="text-lg mb-8">Daftar sekarang dan rasakan kemudahan mengelola stok barang Anda.</p>
+            <a href="register.php" class="bg-green-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-green-700 transition duration-300">Mulai Sekarang!</a>
+        </div>
+    </section>
 
-if (strpos($request_uri, $script_name) === 0) {
-    $route = substr($request_uri, strlen($script_name));
-} else {
-    $route = $request_uri;
-}
+    <footer class="bg-gray-800 text-white py-4 text-center">
+        <div class="container mx-auto px-6">
+            <p class="text-sm">&copy; 2025 Sistem Inventaris. Hak Cipta Dilindungi.</p>
+            <div class="mt-2 space-x-4 text-sm">
+                <a href="#" class="hover:text-blue-400">Kebijakan Privasi</a>
+                <a href="#" class="hover:text-blue-400">Syarat & Ketentuan</a>
+            </div>
+        </div>
+    </footer>
 
-$route = trim($route, '/');
-$segments = explode('/', $route);
-
-$controller_name = 'dashboard';
-$action_name = 'index';
-$id = 0;
-$module = '';
-
-if (isset($segments[0]) && $segments[0] !== '') {
-    if (in_array($segments[0], ['admin', 'pemasok'])) {
-        $module = $segments[0];
-        array_shift($segments);
-    }
-
-    if (isset($segments[0]) && $segments[0] !== '') {
-        $controller_name = $segments[0];
-        if (isset($segments[1]) && $segments[1] !== '') {
-            $action_name = $segments[1];
-            if (isset($segments[2]) && $segments[2] !== '') {
-                $id = (int)$segments[2];
-            }
-        }
-    }
-}
-
-$render_data = [];
-
-if ($controller_name === 'dashboard' || empty($controller_name)) {
-    if (!is_user_logged_in()) {
-        redirect_to($script_name . '/login.php');
-    } else {
-        $page_title = "Dashboard";
-        $total_products = Product_Model::get_product_counts($conn);
-        $total_suppliers = Supplier_Model::get_supplier_counts($conn);
-        $total_transactions_today = Transaction_Model::get_total_transactions_today($conn);
-        $messages = get_flash_messages();
-
-        require_once __DIR__ . '/views/dashboard.php';
-        close_db_connection($conn);
-        exit();
-    }
-}
-
-$controller_class_name = ucfirst($controller_name) . '_Controller';
-$controller_file = __DIR__ . "/controllers/{$module}/" . ucfirst($controller_name) . "_Controller.php";
-
-if (file_exists($controller_file) && class_exists($controller_class_name)) {
-    $controller_instance = new $controller_class_name($conn);
-
-    if (!is_user_logged_in()) {
-        set_flash_message("Silakan login untuk mengakses halaman ini.", "error");
-        redirect_to($script_name . '/login.php');
-        exit();
-    }
-    if ($module === 'admin' && !is_user_admin()) {
-        set_flash_message("Akses ditolak. Anda tidak memiliki izin administrator.", "error");
-        redirect_to($script_name . '/');
-        exit();
-    }
-
-    if (method_exists($controller_instance, $action_name)) {
-        $render_data = $controller_instance->$action_name($id);
-        extract($render_data['data']);
-        require_once __DIR__ . '/views/' . $render_data['view'];
-    } else {
-        set_flash_message("Aksi '$action_name' tidak ditemukan untuk controller '$controller_name'.", "error");
-        redirect_to($script_name . '/');
-    }
-} else {
-    set_flash_message("Halaman tidak ditemukan.", "error");
-    redirect_to($script_name . '/');
-}
-
-close_db_connection($conn);
-?>
+</body>
+</html>

@@ -1,92 +1,82 @@
-<?php
-// UAP_WEB/login.php
-
-session_start();
-require_once 'src/db.php';
-require_once 'src/functions.php';
-
-$script_name = dirname($_SERVER['SCRIPT_NAME']);
-
-if (is_user_logged_in()) {
-    redirect_to($script_name . '/');
-}
-
-$error_message = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = sanitize_user_input($_POST['username']);
-    $password = $_POST['password'];
-
-    $stmt = $conn->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-    if ($result->num_rows === 1) {
-        $user = $result->fetch_assoc();
-
-        if (verify_user_password($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['user_role'] = $user['role'];
-            set_flash_message("Login successful!", "success");
-            redirect_to($script_name . '/');
-        } else {
-            $error_message = "Invalid username or password.";
-        }
-    } else {
-        $error_message = "Invalid username or password.";
-    }
-    $stmt->close();
-}
-?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sintory - Login</title>
+    <title>Login - Sistem Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .error-message {
+            color: #dc2626; /* red-700 */
+            background-color: #fef2f2; /* red-100 */
+            border: 1px solid #ef4444; /* red-400 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+        <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Masuk ke Akun Anda</h2>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div id="errorMessage" class="error-message hidden"></div>
+
+            <div class="mb-6">
+                <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="Masukkan email Anda" required>
+            </div>
+            <div class="mb-6">
+                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                <input type="password" id="password" name="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="Masukkan password Anda" required>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 shadow-md">Login</button>
+        </form>
+        <p class="text-center text-gray-600 text-sm mt-6">
+            Belum punya akun?
+            <a href="register.php" class="text-blue-600 hover:underline font-semibold">Daftar sekarang</a>
+        </p>
+        <p class="text-center text-gray-600 text-sm mt-3">
+            <a href="index.php" class="text-blue-600 hover:underline">Kembali ke Beranda</a>
+        </p>
+    </div>
+    <footer class="bg-gray-800 text-white py-4 text-center absolute bottom-0 w-full">
+        <div class="container mx-auto px-6">
+            <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p> </div>
+    </footer>
+
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        // Sekarang ini adalah warna utama aplikasi Anda
-                        'primary-app-color': '#1976d2',
-                        'primary-app-color-dark': '#1565c0',
-                        // Warna lain jika masih ada, tapi ini akan jadi default
-                    },
-                    fontFamily: {
-                        poppins: ['Poppins', 'sans-serif'],
-                    }
+        const users = [
+            { email: 'admin@example.com', password: 'admin123', role: 'admin' },
+            { email: 'pemasok@example.com', password: 'pemasok123', role: 'pemasok' }
+        ];
+
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('email').value;
+            const passwordInput = document.getElementById('password').value;
+            const errorMessageDiv = document.getElementById('errorMessage');
+
+            errorMessageDiv.classList.add('hidden');
+            errorMessageDiv.textContent = '';
+
+            const foundUser = users.find(user => user.email === emailInput && user.password === passwordInput);
+
+            if (foundUser) {
+                localStorage.setItem('userRole', foundUser.role);
+                localStorage.setItem('userEmail', foundUser.email);
+
+                if (foundUser.role === 'admin') {
+                    window.location.href = 'views/admin/dashboard.php';
+                } else if (foundUser.role === 'pemasok') {
+                    window.location.href = 'views/pemasok/dashboard.php';
                 }
+            } else {
+                errorMessageDiv.textContent = 'Email atau password salah.';
+                errorMessageDiv.classList.remove('hidden');
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?php echo $script_name; ?>/assets/css/style.css">
-</head>
-<body class="flex flex-col min-h-screen items-center justify-center bg-gray-100 text-gray-800 font-poppins">
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-gray-200 text-center">
-        <h2 class="text-primary-app-color text-3xl font-bold mb-8">Sintory Login</h2>
-        <?php if ($error_message): ?>
-            <p class="mb-4 p-3 rounded-md text-sm text-red-700 bg-red-100 border border-red-200"><?php echo $error_message; ?></p>
-        <?php endif; ?>
-        <form action="<?php echo $script_name; ?>/login.php" method="POST" class="space-y-4">
-            <div class="text-left">
-                <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
-                <input type="text" name="username" id="username" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>
-            </div>
-            <div class="text-left">
-                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
-                <input type="password" name="password" id="password" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>
-            </div>
-            <button type="submit" class="w-full bg-primary-app-color hover:bg-primary-app-color-dark text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200 mt-6">
-                Login
-            </button>
-        </form>
-        <p class="mt-4 text-sm text-gray-600">Don't have an account? <a href="<?php echo $script_name; ?>/register.php" class="text-primary-app-color hover:underline">Register here</a></p>
-    </div>
 </body>
 </html>

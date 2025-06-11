@@ -1,17 +1,24 @@
 /* UAP_WEB/assets/css/style.css */
 
-/* Tailwind CSS directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Any extremely custom CSS that CANNOT be done with Tailwind utilities.
-   This section should be as small as possible.
-   For this project, most styles will be handled by Tailwind classes in HTML. */
-
-/* Basic reset/global adjustments if not fully covered by Tailwind preflight */
 html, body {
-    height: 100%; /* Ensure body takes full height for flex utilities */
+    height: 100%;
     margin: 0;
     padding: 0;
+}
+
+/* Transisi global untuk elemen interaktif */
+/* Memberikan efek halus pada perubahan warna, bayangan, atau transformasi */
+* {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+    transition-duration: 200ms; /* Durasi transisi default */
+    transition-timing-function: ease-in-out; /* Fungsi timing default */
+}
+
+/* Transisi cepat untuk flash message */
+.flash-message {
+    transition: opacity 0.3s ease-out;
 }

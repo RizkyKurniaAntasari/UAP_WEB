@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Sistem Inventory</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans flex flex-col min-h-screen"> <nav class="bg-blue-800 p-4 shadow-md text-white">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="dashboard.php" class="text-2xl font-bold">Admin Dashboard</a>
+            <div class="flex space-x-4">
+                <a href="dashboard.php" class="hover:text-blue-200">Beranda</a>
+                <a href="products.php" class="hover:text-blue-200">Barang</a>
+                <a href="categories.php" class="hover:text-blue-200">Kategori</a>
+                <a href="suppliers.php" class="hover:text-blue-200">Pemasok</a>
+                <a href="transactions.php" class="hover:text-blue-200">Transaksi</a>
+                <a href="users.php" class="hover:text-blue-200">Pengguna</a>
+                <a href="../../logout.php" class="bg-red-600 px-3 py-1 rounded-md hover:bg-red-700 transition duration-300" onclick="logoutClientSide(event)">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-6 py-8 flex-grow"> <h1 class="text-4xl font-bold text-gray-800 mb-6">Selamat Datang, Admin!</h1>
+        <p class="text-gray-700 mb-8">Ini adalah pusat kontrol Anda untuk mengelola seluruh sistem inventaris.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Total Barang</h3>
+                <p class="text-4xl font-bold text-blue-600">1200</p>
+                <p class="text-gray-500">unit tersedia</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Transaksi Hari Ini</h3>
+                <p class="text-4xl font-bold text-green-600">45</p>
+                <p class="text-gray-500">transaksi masuk/keluar</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Pemasok Terdaftar</h3>
+                <p class="text-4xl font-bold text-purple-600">15</p>
+                <p class="text-gray-500">pemasok aktif</p>
+            </div>
+        </div>
+
+        <div class="mt-10">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Aksi Cepat</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a href="products.php" class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 text-center">Tambah Barang Baru</a>
+                <a href="transactions.php" class="bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 text-center">Buat Transaksi</a>
+                <a href="transactions.php" class="bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-teal-700 transition duration-300 text-center">Lihat Laporan</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center mt-8"> <div class="container mx-auto px-6">
+            <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
+        </div>
+    </footer>
+
+    <script>
+        function logoutClientSide(event) {
+            event.preventDefault(); // Mencegah navigasi default
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userEmail');
+            window.location.href = '../../logout.php'; // Path ke logout.php di root
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('userRole') !== 'admin') {
+                window.location.href = '../../index.php'; // Path ke index.php di root
+            }
+        });
+    </script>
+</body>
+</html>
