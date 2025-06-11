@@ -56,33 +56,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sintory - Register</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-app-color': '#1976d2',
+                        'primary-app-color-dark': '#1565c0',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo $script_name; ?>/assets/css/style.css">
 </head>
-<body>
-    <div class="register-container">
-        <h2>Sintory Register</h2>
+<body class="flex flex-col min-h-screen items-center justify-center bg-gray-100 text-gray-800 font-poppins">
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-gray-200 text-center">
+        <h2 class="text-primary-app-color text-3xl font-bold mb-8">Sintory Register</h2>
         <?php if ($error_message): ?>
-            <p class="message error-message"><?php echo $error_message; ?></p>
+            <p class="mb-4 p-3 rounded-md text-sm text-red-700 bg-red-100 border border-red-200"><?php echo $error_message; ?></p>
         <?php endif; ?>
         <?php if ($success_message): ?>
-            <p class="message success-message"><?php echo $success_message; ?></p>
+            <p class="mb-4 p-3 rounded-md text-sm text-green-700 bg-green-100 border border-green-200"><?php echo $success_message; ?></p>
         <?php endif; ?>
-        <form action="<?php echo $script_name; ?>/register.php" method="POST" autocomplete="off">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" name="username" id="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
+        <form action="<?php echo $script_name; ?>/register.php" method="POST" class="space-y-4">
+            <div class="text-left">
+                <label for="username" class="block text-gray-700 text-sm font-semibold mb-2">Username</label>
+                <input type="text" name="username" id="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" name="password" id="password" required>
+            <div class="text-left">
+                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                <input type="password" name="password" id="password" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>
             </div>
-            <div class="form-group">
-                <label for="confirm_password">Confirm Password</label>
-                <input type="password" name="confirm_password" id="confirm_password" required>
+            <div class="text-left">
+                <label for="confirm_password" class="block text-gray-700 text-sm font-semibold mb-2">Confirm Password</label>
+                <input type="password" name="confirm_password" id="confirm_password" class="shadow-sm appearance-none border border-gray-300 rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-primary-app-color focus:border-primary-app-color-dark transition duration-200" required>
             </div>
-            <button type="submit" class="button button-primary">Register</button>
+            <button type="submit" class="w-full bg-primary-app-color hover:bg-primary-app-color-dark text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200 mt-6">
+                Register
+            </button>
         </form>
-        <p class="register-links">Already have an account? <a href="<?php echo $script_name; ?>/login.php">Login here</a></p>
+        <p class="mt-4 text-sm text-gray-600">Already have an account? <a href="<?php echo $script_name; ?>/login.php" class="text-primary-app-color hover:underline">Login here</a></p>
     </div>
 </body>
 </html>
