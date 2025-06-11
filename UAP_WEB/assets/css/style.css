@@ -1,0 +1,17 @@
+/* UAP_WEB/assets/css/style.css */
+
+/* Tailwind CSS directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Any extremely custom CSS that CANNOT be done with Tailwind utilities.
+   This section should be as small as possible.
+   For this project, most styles will be handled by Tailwind classes in HTML. */
+
+/* Basic reset/global adjustments if not fully covered by Tailwind preflight */
+html, body {
+    height: 100%; /* Ensure body takes full height for flex utilities */
+    margin: 0;
+    padding: 0;
+}
