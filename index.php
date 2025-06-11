@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Beranda - Sistem Inventaris</title>
+    <title>Beranda - Sistem Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="public/css/style.css">
 </head>
@@ -11,7 +11,7 @@
 
     <nav class="bg-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
-            <a href="index.php" class="text-2xl font-bold text-blue-600">Sistem Inventaris</a>
+            <a href="index.php" class="text-2xl font-bold text-blue-600">Sistem Inventory</a>
             <div>
                 <a href="index.php" class="text-gray-700 hover:text-blue-500 mx-2">Beranda</a>
                 <a href="login.php" class="text-gray-700 hover:text-blue-500 mx-2">Login</a>
@@ -66,7 +66,7 @@
 
     <footer class="bg-gray-800 text-white py-4 text-center">
         <div class="container mx-auto px-6">
-            <p class="text-sm">&copy; 2025 Sistem Inventaris. Hak Cipta Dilindungi.</p>
+            <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
             <div class="mt-2 space-x-4 text-sm">
                 <a href="#" class="hover:text-blue-400">Kebijakan Privasi</a>
                 <a href="#" class="hover:text-blue-400">Syarat & Ketentuan</a>
