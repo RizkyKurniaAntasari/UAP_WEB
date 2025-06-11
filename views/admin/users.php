@@ -48,7 +48,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans flex flex-col min-h-screen"> <nav class="bg-blue-800 p-4 shadow-md text-white">
+<body class="bg-gray-100 font-sans flex flex-col min-h-screen">
+
+    <nav class="bg-blue-800 p-4 shadow-md text-white">
         <div class="container mx-auto flex justify-between items-center">
             <a href="dashboard.php" class="text-2xl font-bold">Admin Dashboard</a>
             <div class="flex space-x-4">
@@ -57,7 +59,8 @@
                 <a href="categories.php" class="hover:text-blue-200">Kategori</a>
                 <a href="suppliers.php" class="hover:text-blue-200">Pemasok</a>
                 <a href="transactions.php" class="hover:text-blue-200">Transaksi</a>
-                <a href="users.php" class="hover:text-blue-200 font-semibold">Pengguna</a> <a href="../../logout.php" class="bg-red-600 px-3 py-1 rounded-md hover:bg-red-700 transition duration-300" onclick="logoutClientSide(event)">Logout</a>
+                <a href="users.php" class="hover:text-blue-200 font-semibold">Pengguna</a>
+                <a href="../../logout.php" class="bg-red-600 px-3 py-1 rounded-md hover:bg-red-700 transition duration-300" onclick="logoutClientSide(event)">Logout</a>
             </div>
         </div>
     </nav>
@@ -78,7 +81,6 @@
                     <option value="">Semua Role</option>
                     <option value="admin">Admin</option>
                     <option value="pemasok">Pemasok</option>
-                    <option value="staff">Staff</option>
                 </select>
             </div>
 
@@ -138,7 +140,6 @@
                     <select id="role" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                         <option value="admin">Admin</option>
                         <option value="pemasok">Pemasok</option>
-                        <option value="staff">Staff</option>
                     </select>
                 </div>
                 <div class="flex justify-end space-x-3">
@@ -155,9 +156,9 @@
         let usersData = [
             { id: 1, username: 'admin', email: 'admin@example.com', role: 'admin' },
             { id: 2, username: 'pemasok1', email: 'pemasok1@example.com', role: 'pemasok' },
-            { id: 3, username: 'staff_gudang', email: 'staff@example.com', role: 'staff' },
+            { id: 3, username: 'staff_gudang', email: 'staff@example.com', role: 'staff' }, // Ini akan difilter
             { id: 4, username: 'pemasok2', email: 'pemasok2@example.com', role: 'pemasok' },
-            { id: 5, username: 'staff_logistik', email: 'logistik@example.com', role: 'staff' }
+            { id: 5, username: 'staff_logistik', email: 'logistik@example.com', role: 'staff' } // Ini akan difilter
         ];
 
         const userTableBody = document.getElementById('userTableBody');
@@ -169,19 +170,25 @@
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
         const roleInput = document.getElementById('role');
-        const userSearchInput = document.getElementById('userSearch'); // Untuk pencarian
-        const roleFilterSelect = document.getElementById('roleFilter'); // Untuk filter role
-        let currentEditingId = null; // Untuk melacak pengguna yang sedang diedit
+        const userSearchInput = document.getElementById('userSearch');
+        const roleFilterSelect = document.getElementById('roleFilter');
+        let currentEditingId = null;
+
+        // Ambil email admin yang sedang login dari localStorage
+        const currentAdminEmail = localStorage.getItem('userEmail');
 
         // Fungsi untuk menampilkan data pengguna ke tabel
         function renderUsers(filteredData = usersData) {
-            userTableBody.innerHTML = ''; // Bersihkan tabel sebelum render ulang
-            if (filteredData.length === 0) {
-                userTableBody.innerHTML = `<tr><td colspan="5" class="py-4 px-6 text-center text-gray-500">Tidak ada pengguna yang ditemukan.</td></tr>`;
+            userTableBody.innerHTML = '';
+            // Filter user yang sedang login (admin itu sendiri)
+            const displayedUsers = filteredData.filter(user => user.email !== currentAdminEmail);
+
+            if (displayedUsers.length === 0) {
+                userTableBody.innerHTML = `<tr><td colspan="5" class="py-4 px-6 text-center text-gray-500">Tidak ada pengguna lain yang ditemukan.</td></tr>`;
                 return;
             }
 
-            filteredData.forEach(user => {
+            displayedUsers.forEach(user => {
                 const row = `
                     <tr class="border-b border-gray-200 hover:bg-gray-100">
                         <td class="py-3 px-6 text-left whitespace-nowrap">${user.id}</td>
@@ -221,11 +228,11 @@
         // --- Fungsionalitas Tambah (Create) & Edit (Update) via Modal ---
         function openAddModal() {
             modalTitle.textContent = 'Tambah Pengguna Baru';
-            userForm.reset(); // Kosongkan formulir
-            userId.value = ''; // Pastikan ID kosong untuk mode tambah
+            userForm.reset();
+            userId.value = '';
             currentEditingId = null;
-            passwordInput.required = true; // Password wajib diisi saat tambah
-            userModal.style.display = 'flex'; // Tampilkan modal
+            passwordInput.required = true;
+            userModal.style.display = 'flex';
         }
 
         function openEditModal(id) {
@@ -235,51 +242,54 @@
                 userId.value = userToEdit.id;
                 usernameInput.value = userToEdit.username;
                 emailInput.value = userToEdit.email;
-                passwordInput.value = ''; // Kosongkan password saat edit (tidak menampilkan password lama)
-                passwordInput.required = false; // Password tidak wajib diisi saat edit
+                passwordInput.value = '';
+                passwordInput.required = false;
                 roleInput.value = userToEdit.role;
-                currentEditingId = id; // Simpan ID pengguna yang sedang diedit
-                userModal.style.display = 'flex'; // Tampilkan modal
+                currentEditingId = id;
+                userModal.style.display = 'flex';
             }
         }
 
         function closeModal() {
-            userModal.style.display = 'none'; // Sembunyikan modal
+            userModal.style.display = 'none';
         }
 
         userForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Mencegah form submit default
+            event.preventDefault();
 
             const id = userId.value ? parseInt(userId.value) : null;
             const username = usernameInput.value;
             const email = emailInput.value;
-            const password = passwordInput.value; // Ini akan menjadi plain text, TIDAK AMAN untuk produksi
+            const password = passwordInput.value;
             const role = roleInput.value;
 
             if (currentEditingId) {
-                // Mode Edit (Update)
                 const userIndex = usersData.findIndex(u => u.id === id);
                 if (userIndex !== -1) {
                     usersData[userIndex].username = username;
                     usersData[userIndex].email = email;
-                    if (password) { // Hanya update password jika diisi
-                        usersData[userIndex].password = password; // Di sini seharusnya di-hash
+                    if (password) {
+                        usersData[userIndex].password = password;
                     }
                     usersData[userIndex].role = role;
                 }
             } else {
-                // Mode Tambah (Create)
+                if (usersData.some(u => u.email === email)) {
+                    alert('Email sudah terdaftar. Gunakan email lain.');
+                    return;
+                }
+
                 const newId = usersData.length > 0 ? Math.max(...usersData.map(u => u.id)) + 1 : 1;
                 usersData.push({
                     id: newId,
                     username: username,
                     email: email,
-                    password: password, // Di sini seharusnya di-hash
+                    password: password,
                     role: role
                 });
             }
-            filterUsers(); // Render ulang tabel setelah penambahan/pembaruan (dengan filter aktif)
-            closeModal(); // Tutup modal
+            filterUsers();
+            closeModal();
         });
 
         // --- Fungsionalitas Filter dan Pencarian ---
@@ -296,7 +306,7 @@
                 const matchesRole = selectedRole === '' || user.role === selectedRole;
                 return matchesSearch && matchesRole;
             });
-            renderUsers(filtered); // Panggil render dengan data yang sudah difilter
+            renderUsers(filtered);
         }
 
 
@@ -307,9 +317,9 @@
             document.querySelector('main').classList.add('flex-grow');
 
             if (localStorage.getItem('userRole') !== 'admin') {
-                window.location.href = '../../index.php'; // Kembali ke index.php di root
+                window.location.href = '../../index.php';
             }
-            filterUsers(); // Panggil filter untuk menampilkan data awal (dan terapkan filter jika sudah ada)
+            filterUsers();
         });
 
         // Fungsi logout client-side (tetap sama)
@@ -317,7 +327,7 @@
             event.preventDefault();
             localStorage.removeItem('userRole');
             localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php'; // Path ke logout.php di root
+            window.location.href = '../../logout.php';
         }
     </script>
 </body>
