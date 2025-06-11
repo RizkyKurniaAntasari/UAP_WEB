@@ -44,7 +44,7 @@ $script_name = dirname($_SERVER['SCRIPT_NAME']);
                 <a href="<?php echo $script_name; ?>/admin/transactions" class="text-white no-underline font-medium hover:opacity-80 whitespace-nowrap">Transaksi</a>
             </nav>
             <div class="flex items-center gap-4">
-                <div class="relative inline-block">
+                <div class="relative inline-block dropdown">
                     <a href="#" class="flex items-center text-white no-underline font-normal hover:opacity-80 px-2 py-1 rounded cursor-pointer whitespace-nowrap transition duration-200 dropdown-toggle">
                         <i class="fas fa-user-circle mr-2 text-lg"></i> <?php echo htmlspecialchars($_SESSION['username']); ?> <i class="fas fa-caret-down ml-2 text-sm"></i>
                     </a>

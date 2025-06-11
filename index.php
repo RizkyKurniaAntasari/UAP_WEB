@@ -7,11 +7,11 @@ require_once __DIR__ . '/src/db.php';
 require_once __DIR__ . '/src/functions.php';
 
 // Load all controllers
-require_once __DIR__ . '/controllers/admin/Product_Controller.php';
-require_once __DIR__ . '/controllers/admin/Category_Controller.php';
-require_once __DIR__ . '/controllers/admin/Transaction_Controller.php';
-require_once __DIR__ . '/controllers/admin/User_Controller.php';
-require_once __DIR__ . '/controllers/pemasok/Supplier_Controller.php';
+// require_once __DIR__ . '/controllers/admin/Product_Controller.php';
+// require_once __DIR__ . '/controllers/admin/Category_Controller.php';
+// require_once __DIR__ . '/controllers/admin/Transaction_Controller.php';
+// require_once __DIR__ . '/controllers/admin/User_Controller.php';
+// require_once __DIR__ . '/controllers/pemasok/Supplier_Controller.php';
 
 $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $script_name = dirname($_SERVER['SCRIPT_NAME']);
