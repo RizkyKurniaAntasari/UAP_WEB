@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($success_message): ?>
             <p class="message success-message"><?php echo $success_message; ?></p>
         <?php endif; ?>
-        <form action="<?php echo $script_name; ?>/register.php" method="POST">
+        <form action="<?php echo $script_name; ?>/register.php" method="POST" autocomplete="off">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" name="username" id="username" value="<?php echo isset($_POST['username']) ? htmlspecialchars($_POST['username']) : ''; ?>" required>
