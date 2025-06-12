@@ -1,3 +1,10 @@
+<?php
+session_start();
+if($_SESSION['login_berhasil']) {
+    echo "<script>alert('login berhasil')</script>";
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
