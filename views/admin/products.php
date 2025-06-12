@@ -423,7 +423,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Autentikasi
             if (localStorage.getItem('userRole') !== 'admin') {
-                window.location.href = '../../index.php'; // Kembali ke index.php di root
+                // window.location.href = '../../index.php'; // Kembali ke index.php di root
                 return;
             }
 
@@ -448,7 +448,7 @@
             event.preventDefault();
             localStorage.removeItem('userRole');
             localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php';
+            // window.location.href = '../../logout.php';
         }
     </script>
 

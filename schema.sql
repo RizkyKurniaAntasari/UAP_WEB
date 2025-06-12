@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS pemasok (
 );
 
 CREATE TABLE  IF NOT EXISTS kategori(
-  id_kategori INT AUTO_INCREMENT PRIMARY KEY,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   nama_kategori VARCHAR(255),
   deskripsi VARCHAR(255)
 );

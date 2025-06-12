@@ -164,7 +164,7 @@
             document.querySelector('main').classList.add('flex-grow');
 
             if (localStorage.getItem('userRole') !== 'admin') {
-                window.location.href = '../../index.php';
+                // window.location.href = '../../index.php';
             }
             filterUsers();
         });
@@ -174,5 +174,5 @@
             event.preventDefault();
             localStorage.removeItem('userRole');
             localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php';
+            // window.location.href = '../../logout.php';
         }

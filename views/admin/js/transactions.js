@@ -257,7 +257,7 @@
             document.querySelector('main').classList.add('flex-grow');
 
             if (localStorage.getItem('userRole') !== 'admin') {
-                window.location.href = '../../index.php'; // Kembali ke index.php di root
+                // window.location.href = '../../index.php'; // Kembali ke index.php di root
             }
             renderTransactions(); // Panggil fungsi untuk menampilkan data saat halaman dimuat
         });
@@ -267,5 +267,5 @@
             event.preventDefault();
             localStorage.removeItem('userRole');
             localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php'; // Path ke logout.php di root
+            // window.location.href = '../../logout.php'; // Path ke logout.php di root
         }

@@ -43,6 +43,6 @@
 
     <?php include_once 'components/footer.php'?>
 
-    <script src="js/dashboard.js"></script>
+
 </body>
 </html>

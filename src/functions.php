@@ -1,5 +1,6 @@
 <?php
 define('BASE_URL', '/' . basename(dirname(__DIR__))); // misal: '/inventaris'
+password_hash("admin123", PASSWORD_DEFAULT);
 
 function redirect($url) {
     header("Location: " . $url);
