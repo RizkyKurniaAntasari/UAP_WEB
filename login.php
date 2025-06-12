@@ -1,8 +1,69 @@
 <?php
+// Start the session at the very beginning of the script
 session_start();
-if($_SESSION['login_berhasil']) {
-    echo "<script>alert('login berhasil')</script>";
+include_once 'src/db.php';
+include_once 'src/functions.php';
+$errorMessage = '';
+
+// Check if the form was submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // 1. Get and sanitize user input
+    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+    $password = $_POST['password']; // Password will be hashed, so no sanitization here
+
+    // Basic validation
+    if (empty($email) || empty($password)) {
+        $errorMessage = 'Email and password are required.';
+    } else {
+        // 3. Prepare a SQL statement to prevent SQL injection
+        $stmt = $conn->prepare("SELECT id, nama, email, password, role FROM users WHERE email = ?");
+        if ($stmt === false) {
+            die("Prepare failed: " . htmlspecialchars($conn->error));
+        }
+
+        $stmt->bind_param("s", $email); // 's' indicates a string parameter
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        // 4. Check if a user with the given email exists   
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+
+            // 5. Verify the password
+            // Use password_verify for securely checking hashed passwords
+            if (password_verify($password, $user['password'])) {
+                // Password is correct, set session variables
+                $_SESSION['loggedin'] = true;
+                $_SESSION['id'] = $user['id'];
+                $_SESSION['nama'] = $user['nama'];
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['role'] = $user['role']; // Store the user's role
+
+                // Redirect to a dashboard or home page after successful login
+                // You can customize this redirection based on the user's role
+                if ($_SESSION['role'] == 'pemasok'){
+                    redirect_views_pemasok('/dashboard.php');
+                }else{
+                    redirect_views_admin('/dashboard.php');
+                }
+                exit();
+            } else {
+                // Incorrect password
+                $errorMessage = 'Invalid email or password.';
+            }
+        } else {
+            // User not found
+            $errorMessage = 'Invalid email or password.';
+        }
+
+        // Close statement and connection
+        $stmt->close();
+        $conn->close();
+    }
 }
+
+// If there's an error, the script will continue to the HTML part and display the error message.
+// The HTML code from your provided snippet should be in the same file or included.
 ?>
 
 <!DOCTYPE html>
@@ -26,8 +87,12 @@ if($_SESSION['login_berhasil']) {
 <body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
     <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
         <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Masuk ke Akun Anda</h2>
-        <form id="loginForm" onsubmit="handleLogin(event)">
-            <div id="errorMessage" class="error-message hidden"></div>
+        <form id="loginForm" action="login.php" method="POST">
+            <?php if (!empty($errorMessage)): ?>
+                <div id="errorMessage" class="error-message">
+                    <?php echo htmlspecialchars($errorMessage); ?>
+                </div>
+            <?php endif; ?>
 
             <div class="mb-6">
                 <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
@@ -47,53 +112,5 @@ if($_SESSION['login_berhasil']) {
             <a href="index.php" class="text-blue-600 hover:underline">Kembali ke Beranda</a>
         </p>
     </div>
-    <footer class="bg-gray-800 text-white py-4 text-center absolute bottom-0 w-full">
-        <div class="container mx-auto px-6">
-            <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Data pengguna dummy
-        const users = [
-            { email: 'admin@example.com', password: 'admin123', role: 'admin' },
-            { email: 'pemasok@example.com', password: 'pemasok123', role: 'pemasok' }
-        ];
-
-        function handleLogin(event) {
-            event.preventDefault(); // Mencegah form melakukan submit default (reload halaman)
-
-            const emailInput = document.getElementById('email').value;
-            const passwordInput = document.getElementById('password').value;
-            const errorMessageDiv = document.getElementById('errorMessage');
-
-            // Sembunyikan pesan error sebelumnya
-            errorMessageDiv.classList.add('hidden');
-            errorMessageDiv.textContent = '';
-
-            // Cari pengguna di data dummy
-            const foundUser = users.find(user => user.email === emailInput && user.password === passwordInput);
-
-            if (foundUser) {
-                // Login berhasil
-                // Simpan role di localStorage (simulasi sesi di browser)
-                localStorage.setItem('userRole', foundUser.role);
-                localStorage.setItem('userEmail', foundUser.email);
-                // Opsional: simpan username juga, jika diperlukan di dashboard (misal untuk "Selamat Datang, [username]!")
-                localStorage.setItem('userUsername', foundUser.email.split('@')[0]); // Contoh sederhana ambil sebelum '@'
-
-                // Redirect berdasarkan role
-                if (foundUser.role === 'admin') {
-                    window.location.href = 'views/admin/dashboard.php';
-                } else if (foundUser.role === 'pemasok') {
-                    window.location.href = 'views/pemasok/dashboard.php';
-                }
-            } else {
-                // Login gagal
-                errorMessageDiv.textContent = 'Email atau password salah.';
-                errorMessageDiv.classList.remove('hidden');
-            }
-        }
-    </script>
 </body>
 </html>

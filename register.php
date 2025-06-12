@@ -75,11 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <form action="" method="POST">
             <div class="mb-5">
                 <label for="name" class="block text-gray-700 text-sm font-semibold mb-2">Nama Lengkap</label>
-                <input type="text" id="name" name="name" value="<?= $_POST['name'] ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200" placeholder="Masukkan nama lengkap Anda" required>
+                <input type="text" id="name" name="name" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200" placeholder="Masukkan nama lengkap Anda" required>
             </div>
             <div class="mb-5">
                 <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
-                <input type="email" id="email" name="email" value="<?= $_POST['email'] ?>" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200" placeholder="Masukkan email Anda" required>
+                <input type="email" id="email" name="email" value="" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200" placeholder="Masukkan email Anda" required>
             </div>
             <div class="mb-5">
                 <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
@@ -99,11 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <a href="index.php" class="text-blue-600 hover:underline">Kembali ke Beranda</a>
         </p>
     </div>
-    <footer class="bg-gray-800 text-white py-4 text-center absolute bottom-0 w-full">
-        <div class="container mx-auto px-6">
-            <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
-        </div>
-    </footer>
+    
 </body>
 
 </html>

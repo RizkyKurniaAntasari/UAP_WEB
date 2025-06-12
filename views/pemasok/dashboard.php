@@ -54,20 +54,5 @@ $pesananBaru = 5;
             <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
         </div>
     </footer>
-
-    <script>
-        function logoutClientSide(event) {
-            event.preventDefault();
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php'; // Path ke logout.php di root
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('userRole') !== 'pemasok') {
-                window.location.href = '../../index.php'; // Path ke index.php di root
-            }
-        });
-    </script>
 </body>
 </html>
