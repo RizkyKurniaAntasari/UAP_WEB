@@ -1,84 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Dashboard Admin - Sistem Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-
-<body>
-    <div class="flex min-h-screen bg-gray-100">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-lg">
-            <div class="p-6 font-bold text-lg border-b border-gray-200">Admin Pemasok</div>
-            <nav class="mt-6">
-                <ul class="space-y-2">
-                    <li><a href="#" class="block px-6 py-2 hover:bg-gray-200">Dashboard</a></li>
-                    <li><a href="#" class="block px-6 py-2 hover:bg-gray-200">Data Barang</a></li>
-                    <li><a href="#" class="block px-6 py-2 hover:bg-gray-200">Pemasok</a></li>
-                    <li><a href="#" class="block px-6 py-2 hover:bg-gray-200">Permintaan</a></li>
-                    <li><a href="#" class="block px-6 py-2 hover:bg-gray-200">Laporan</a></li>
-                </ul>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="flex-1 p-6">
-            <h1 class="text-2xl font-semibold mb-4">Dashboard Pemasok</h1>
-
-            <!-- Statistik Kartu -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white p-4 shadow rounded-lg">
-                    <p class="text-sm text-gray-500">Total Barang</p>
-                    <p class="text-2xl font-bold">124</p>
-                </div>
-                <div class="bg-white p-4 shadow rounded-lg">
-                    <p class="text-sm text-gray-500">Pemasok Terdaftar</p>
-                    <p class="text-2xl font-bold">18</p>
-                </div>
-                <div class="bg-white p-4 shadow rounded-lg">
-                    <p class="text-sm text-gray-500">Stok Habis</p>
-                    <p class="text-2xl font-bold text-red-600">5</p>
-                </div>
-                <div class="bg-white p-4 shadow rounded-lg">
-                    <p class="text-sm text-gray-500">Permintaan Baru</p>
-                    <p class="text-2xl font-bold text-blue-600">9</p>
-                </div>
+<body class="bg-gray-100 font-sans flex flex-col min-h-screen"> <nav class="bg-blue-800 p-4 shadow-md text-white">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="dashboard.php" class="text-2xl font-bold">Admin Dashboard</a>
+            <div class="flex space-x-4">
+                <a href="dashboard.php" class="hover:text-blue-200">Beranda</a>
+                <a href="products.php" class="hover:text-blue-200">Barang</a>
+                <a href="categories.php" class="hover:text-blue-200">Kategori</a>
+                <a href="suppliers.php" class="hover:text-blue-200">Pemasok</a>
+                <a href="transactions.php" class="hover:text-blue-200">Transaksi</a>
+                <a href="users.php" class="hover:text-blue-200">Pengguna</a>
+                <a href="../../logout.php" class="bg-red-600 px-3 py-1 rounded-md hover:bg-red-700 transition duration-300" onclick="logoutClientSide(event)">Logout</a>
             </div>
+        </div>
+    </nav>
 
-            <!-- Tabel Barang -->
-            <div class="bg-white shadow rounded-lg p-4">
-                <h2 class="text-lg font-semibold mb-4">Barang Terbaru</h2>
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="px-4 py-2">Nama Barang</th>
-                            <th class="px-4 py-2">Kategori</th>
-                            <th class="px-4 py-2">Stok</th>
-                            <th class="px-4 py-2">Tanggal Masuk</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="border-t">
-                            <td class="px-4 py-2">Beras Medium</td>
-                            <td class="px-4 py-2">Sembako</td>
-                            <td class="px-4 py-2">35</td>
-                            <td class="px-4 py-2">10 Juni 2025</td>
-                        </tr>
-                        <tr class="border-t">
-                            <td class="px-4 py-2">Minyak Goreng</td>
-                            <td class="px-4 py-2">Sembako</td>
-                            <td class="px-4 py-2 text-red-600">0</td>
-                            <td class="px-4 py-2">9 Juni 2025</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <main class="container mx-auto px-6 py-8 flex-grow"> <h1 class="text-4xl font-bold text-gray-800 mb-6">Selamat Datang, Admin!</h1>
+        <p class="text-gray-700 mb-8">Ini adalah pusat kontrol Anda untuk mengelola seluruh sistem inventaris.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Total Barang</h3>
+                <p class="text-4xl font-bold text-blue-600">1200</p>
+                <p class="text-gray-500">unit tersedia</p>
             </div>
-        </main>
-    </div>
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Transaksi Hari Ini</h3>
+                <p class="text-4xl font-bold text-green-600">45</p>
+                <p class="text-gray-500">transaksi masuk/keluar</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Pemasok Terdaftar</h3>
+                <p class="text-4xl font-bold text-purple-600">15</p>
+                <p class="text-gray-500">pemasok aktif</p>
+            </div>
+        </div>
 
+        <div class="mt-10">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Aksi Cepat</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <a href="products.php" class="bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 text-center">Tambah Barang Baru</a>
+                <a href="transactions.php" class="bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 text-center">Buat Transaksi</a>
+                <a href="transactions.php" class="bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-teal-700 transition duration-300 text-center">Lihat Laporan</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-4 text-center mt-8"> <div class="container mx-auto px-6">
+            <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
+        </div>
+    </footer>
+
+    <script>
+        function logoutClientSide(event) {
+            event.preventDefault(); // Mencegah navigasi default
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userEmail');
+            window.location.href = '../../logout.php'; // Path ke logout.php di root
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('userRole') !== 'admin') {
+                window.location.href = '../../index.php'; // Path ke index.php di root
+            }
+        });
+    </script>
 </body>
-
 </html>
