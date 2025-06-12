@@ -15,7 +15,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Total Barang</h3>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Daftar Barang</h3>
                 <p class="text-4xl font-bold text-blue-600">1200</p>
                 <p class="text-gray-500">unit tersedia</p>
             </div>
@@ -43,19 +43,6 @@
 
     <?php include_once 'components/footer.php'?>
 
-    <script>
-        function logoutClientSide(event) {
-            event.preventDefault(); // Mencegah navigasi default
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php'; // Path ke logout.php di root
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if (localStorage.getItem('userRole') !== 'admin') {
-                window.location.href = '../../index.php'; // Path ke index.php di root
-            }
-        });
-    </script>
+    <script src="js/dashboard.js"></script>
 </body>
 </html>

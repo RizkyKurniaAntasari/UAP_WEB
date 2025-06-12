@@ -1,3 +1,10 @@
+<?php
+
+$jumlahProduk = 50;
+$pesananBaru = 5;
+
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -24,12 +31,12 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
                 <h3 class="text-xl font-semibold text-gray-700 mb-2">Produk Anda Terdaftar</h3>
-                <p class="text-4xl font-bold text-green-600">50</p>
+                <p class="text-4xl font-bold text-green-600"><?= $jumlahProduk ?></p>
                 <p class="text-gray-500">jenis produk</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
                 <h3 class="text-xl font-semibold text-gray-700 mb-2">Pesanan Baru</h3>
-                <p class="text-4xl font-bold text-blue-600">5</p>
+                <p class="text-4xl font-bold text-blue-600"><?= $pesananBaru ?></p>
                 <p class="text-gray-500">menunggu konfirmasi</p>
             </div>
         </div>
@@ -38,7 +45,7 @@
             <h2 class="text-3xl font-bold text-gray-800 mb-4">Aksi Cepat</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <a href="my_products.php" class="bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition duration-300 text-center">Lihat Produk Saya</a>
-                <a href="#" class="bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 text-center">Lihat Pesanan</a>
+                <a href="orders.php" class="bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 text-center">Lihat Pesanan</a>
             </div>
         </div>
     </main>
