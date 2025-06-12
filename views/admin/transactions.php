@@ -7,6 +7,38 @@
     <title>Manajemen Transaksi - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        /* Gaya tambahan untuk modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px; /* Sesuaikan lebar modal */
+            position: relative;
+        }
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6B7280; /* gray-500 */
+        }
+    </style>
 </head>
 
 <body class="bg-gray-100 font-sans flex flex-col min-h-screen">
@@ -20,13 +52,13 @@
         <div class="bg-white p-6 rounded-lg shadow-md mb-8">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-semibold text-gray-800">Riwayat Transaksi</h2>
-                <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300" onclick="openAddModal()">Buat Transaksi Baru</a>
+                <button id="addTransactionBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">Buat Transaksi Baru</button>
             </div>
 
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label for="transactionTypeFilter" class="block text-gray-700 text-sm font-semibold mb-1">Jenis Transaksi:</label>
-                    <select id="transactionTypeFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" onchange="filterTransactions()">
+                    <select id="transactionTypeFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
                         <option value="">Semua</option>
                         <option value="masuk">Masuk</option>
                         <option value="keluar">Keluar</option>
@@ -34,11 +66,11 @@
                 </div>
                 <div>
                     <label for="startDateFilter" class="block text-gray-700 text-sm font-semibold mb-1">Dari Tanggal:</label>
-                    <input type="date" id="startDateFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" onchange="filterTransactions()">
+                    <input type="date" id="startDateFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
                 </div>
                 <div>
                     <label for="endDateFilter" class="block text-gray-700 text-sm font-semibold mb-1">Sampai Tanggal:</label>
-                    <input type="date" id="endDateFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" onchange="filterTransactions()">
+                    <input type="date" id="endDateFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
                 </div>
             </div>
 
@@ -57,16 +89,12 @@
                         </tr>
                     </thead>
                     <tbody class="text-gray-600 text-sm font-light" id="transactionTableBody">
-                    </tbody>
+                        </tbody>
                 </table>
             </div>
 
-            <div class="flex justify-center mt-6 space-x-2">
-                <a href="#" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-200">Previous</a>
-                <a href="#" class="px-4 py-2 border border-blue-500 bg-blue-500 text-white rounded-md">1</a>
-                <a href="#" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-200">2</a>
-                <a href="#" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-200">Next</a>
-            </div>
+            <div class="flex justify-center mt-6 space-x-2" id="paginationContainer">
+                </div>
 
         </div>
     </main>
@@ -85,16 +113,15 @@
                 </div>
                 <div class="mb-4">
                     <label for="transactionProduct" class="block text-gray-700 text-sm font-semibold mb-2">Nama Barang</label>
-                    <select id="transactionProduct" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                    </select>
+                    <input type="text" id="transactionProduct" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ketik nama barang..." required>
                 </div>
                 <div class="mb-4">
                     <label for="transactionQuantity" class="block text-gray-700 text-sm font-semibold mb-2">Kuantitas</label>
                     <input type="number" id="transactionQuantity" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1">
                 </div>
                 <div class="mb-4">
-                    <label for="transactionType" class="block text-gray-700 text-sm font-semibold mb-2">Jenis Transaksi</label>
-                    <select id="transactionType" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <label for="transactionTypeModal" class="block text-gray-700 text-sm font-semibold mb-2">Jenis Transaksi</label>
+                    <select id="transactionTypeModal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                         <option value="masuk">Masuk</option>
                         <option value="keluar">Keluar</option>
                     </select>

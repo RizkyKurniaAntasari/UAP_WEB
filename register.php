@@ -1,15 +1,66 @@
+<?php
+include "src/db.php";
+include "src/functions.php";
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $error = [];
+    $nama = $_POST['name'];
+    $email = $_POST['email'];
+    $pass = $_POST['password'];
+    $conPass = $_POST['confirm-password'];
+    $sql = "SELECT * FROM users WHERE email = '$email'";
+    $result = mysqli_query($conn, $sql);
+    if (strlen($nama) > 200) {
+        $error[] = "nama tidak boleh lebih dari 200 karakter";
+    }
+    if (strlen($email) > 200) {
+        $error[] = "email tidak boleh lebih dari 200 karakter";
+    }
+    if (strlen($pass) > 200) {
+        $error[] = "password tidak boleh lebih dari 200 karakter";
+    }
+    if (strlen($pass) < 6) {
+        $error[] = "password tidak boleh kurang dari 6 karakter";
+    }
+    if ($result->num_rows > 0) {
+        $error[] = "email sudah terdaftar";
+    }
+    if ($pass != $conPass) {
+        $error[] = "password tidak sama";
+    }
+    $hashPass = hash_password($pass);
+    $sql = "INSERT INTO users (nama, email, password, role) VALUES ('$nama', '$email', '$hashPass', 'pemasok')";
+    mysqli_query($conn, $sql);
+}
+?>
+
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar - Sistem Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen font-sans">
+    <div class="p-8 bg-red-100 border border-red-400 text-red-700 py-4 rounded relative" role="alert">
+        <strong class="font-bold flex items-center gap-2">
+            <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10c0 4.418-3.582 8-8 8s-8-3.582-8-8 3.582-8 8-8 8 3.582 8 8zM9 4a1 1 0 112 0v5a1 1 0 11-2 0V4zm0 8a1 1 0 112 0 1 1 0 01-2 0z" clip-rule="evenodd" />
+            </svg>
+            There were 2 errors with your submission
+        </strong>
+        <ul class="mt-2 ml-6 list-disc list-inside text-sm">
+            <li>Your password must be at least 8 characters</li>
+            <li>Your password must include at least one pro wrestling finishing move</li>
+        </ul>
+    </div>
     <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
         <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Buat Akun Baru</h2>
-        <form action="#" method="POST"> <div class="mb-5">
+        <form action="" method="POST">
+            <div class="mb-5">
                 <label for="name" class="block text-gray-700 text-sm font-semibold mb-2">Nama Lengkap</label>
                 <input type="text" id="name" name="name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200" placeholder="Masukkan nama lengkap Anda" required>
             </div>
@@ -41,4 +92,5 @@
         </div>
     </footer>
 </body>
+
 </html>
