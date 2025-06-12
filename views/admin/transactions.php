@@ -1,56 +1,17 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manajemen Transaksi - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Style untuk modal/popup */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            width: 90%;
-            max-width: 600px; /* Lebih lebar untuk form transaksi */
-            position: relative;
-        }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
+
 <body class="bg-gray-100 font-sans flex flex-col min-h-screen">
 
-    <?php include_once 'components/navbar.php'?>
+    <?php include_once 'components/navbar.php' ?>
 
     <main class="container mx-auto px-6 py-8 flex-grow">
         <h1 class="text-4xl font-bold text-gray-800 mb-6">Manajemen Transaksi</h1>
@@ -79,7 +40,7 @@
                     <label for="endDateFilter" class="block text-gray-700 text-sm font-semibold mb-1">Sampai Tanggal:</label>
                     <input type="date" id="endDateFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full" onchange="filterTransactions()">
                 </div>
-                </div>
+            </div>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
@@ -96,7 +57,7 @@
                         </tr>
                     </thead>
                     <tbody class="text-gray-600 text-sm font-light" id="transactionTableBody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
 
@@ -110,8 +71,8 @@
         </div>
     </main>
 
-    <?php include_once 'components/footer.php'?>
-    
+    <?php include_once 'components/footer.php' ?>
+
     <div id="transactionModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-button" onclick="closeModal()">&times;</span>
@@ -125,7 +86,7 @@
                 <div class="mb-4">
                     <label for="transactionProduct" class="block text-gray-700 text-sm font-semibold mb-2">Nama Barang</label>
                     <select id="transactionProduct" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        </select>
+                    </select>
                 </div>
                 <div class="mb-4">
                     <label for="transactionQuantity" class="block text-gray-700 text-sm font-semibold mb-2">Kuantitas</label>
@@ -140,7 +101,8 @@
                 </div>
                 <div class="mb-4">
                     <label for="transactionUser" class="block text-gray-700 text-sm font-semibold mb-2">Oleh User</label>
-                    <input type="text" id="transactionUser" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly> </div>
+                    <input type="text" id="transactionUser" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                </div>
                 <div class="mb-6">
                     <label for="transactionNotes" class="block text-gray-700 text-sm font-semibold mb-2">Catatan</label>
                     <textarea id="transactionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
@@ -155,23 +117,81 @@
 
     <script>
         // Data transaksi dummy (global agar bisa diakses fungsi lain)
-        let transactionsData = [
-            { id: 'TRX001', date: '2025-06-10', product: 'Laptop Gaming X1', type: 'masuk', quantity: 10, user: 'admin', notes: 'Pembelian dari PT. ABC Global' },
-            { id: 'TRX002', date: '2025-06-10', product: 'Kemeja Pria Casual', type: 'keluar', quantity: 5, user: 'staff_gudang', notes: 'Penjualan ke pelanggan B' },
-            { id: 'TRX003', date: '2025-06-09', product: 'Berliner Coklat', type: 'masuk', quantity: 30, user: 'admin', notes: 'Pasokan harian' },
-            { id: 'TRX004', date: '2025-06-08', product: 'Mouse Wireless A10', type: 'keluar', quantity: 2, user: 'staff_logistik', notes: 'Pengiriman pesanan online' },
-            { id: 'TRX005', date: '2025-06-07', product: 'Laptop Gaming X1', type: 'keluar', quantity: 1, user: 'admin', notes: 'Retur ke pemasok' },
-            { id: 'TRX006', date: '2025-06-07', product: 'Air Mineral 600ml', type: 'masuk', quantity: 100, user: 'staff_gudang', notes: 'Pembelian bulk' },
+        let transactionsData = [{
+                id: 'TRX001',
+                date: '2025-06-10',
+                product: 'Laptop Gaming X1',
+                type: 'masuk',
+                quantity: 10,
+                user: 'admin',
+                notes: 'Pembelian dari PT. ABC Global'
+            },
+            {
+                id: 'TRX002',
+                date: '2025-06-10',
+                product: 'Kemeja Pria Casual',
+                type: 'keluar',
+                quantity: 5,
+                user: 'staff_gudang',
+                notes: 'Penjualan ke pelanggan B'
+            },
+            {
+                id: 'TRX003',
+                date: '2025-06-09',
+                product: 'Berliner Coklat',
+                type: 'masuk',
+                quantity: 30,
+                user: 'admin',
+                notes: 'Pasokan harian'
+            },
+            {
+                id: 'TRX004',
+                date: '2025-06-08',
+                product: 'Mouse Wireless A10',
+                type: 'keluar',
+                quantity: 2,
+                user: 'staff_logistik',
+                notes: 'Pengiriman pesanan online'
+            },
+            {
+                id: 'TRX005',
+                date: '2025-06-07',
+                product: 'Laptop Gaming X1',
+                type: 'keluar',
+                quantity: 1,
+                user: 'admin',
+                notes: 'Retur ke pemasok'
+            },
+            {
+                id: 'TRX006',
+                date: '2025-06-07',
+                product: 'Air Mineral 600ml',
+                type: 'masuk',
+                quantity: 100,
+                user: 'staff_gudang',
+                notes: 'Pembelian bulk'
+            },
         ];
 
         // Data produk dummy (untuk dropdown di form transaksi, bisa disinkronkan dari products.php aslinya)
-        const productsList = [
-            { name: 'Laptop Gaming X1' },
-            { name: 'Kemeja Pria Casual' },
-            { name: 'Berliner Coklat' },
-            { name: 'Mouse Wireless A10' },
-            { name: 'Celana Jeans Slim Fit' },
-            { name: 'Air Mineral 600ml' },
+        const productsList = [{
+                name: 'Laptop Gaming X1'
+            },
+            {
+                name: 'Kemeja Pria Casual'
+            },
+            {
+                name: 'Berliner Coklat'
+            },
+            {
+                name: 'Mouse Wireless A10'
+            },
+            {
+                name: 'Celana Jeans Slim Fit'
+            },
+            {
+                name: 'Air Mineral 600ml'
+            },
         ];
 
         const transactionTableBody = document.getElementById('transactionTableBody');
@@ -313,7 +333,7 @@
                 // Generate ID unik baru (contoh sederhana, bisa lebih kompleks)
                 const newIdNum = transactionsData.length > 0 ? parseInt(transactionsData[0].id.replace('TRX', '')) + 1 : 1;
                 const newId = 'TRX' + String(newIdNum).padStart(3, '0'); // Contoh: TRX007
-                
+
                 transactionsData.unshift({ // Tambahkan ke awal array
                     id: newId,
                     date: date,
@@ -369,4 +389,5 @@
         }
     </script>
 </body>
+
 </html>
