@@ -234,5 +234,7 @@
             window.location.href = '../../logout.php'; // Path ke logout.php di root
         }
     </script>
+
+    
 </body>
 </html>
