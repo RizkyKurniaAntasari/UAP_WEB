@@ -1,5 +1,11 @@
+<?php
+    include_once __DIR__ . '/../../src/db.php';
+    $categories = $conn->query("SELECT * FROM kategori ORDER BY id ASC");
+?>
+
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,15 +13,67 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
 </head>
-<body class="bg-gray-100 font-sans flex flex-col min-h-screen">
 
-    <?php include_once 'components/navbar.php'?>
+<body class="bg-gray-100 font-sans flex min-h-screen flex-col">
+
+    <?php include_once 'components/navbar.php' ?>
 
     <main class="container mx-auto px-6 py-8 flex-grow">
         <h1 class="text-4xl font-bold text-gray-800 mb-6">Manajemen Kategori</h1>
         <p class="text-gray-700 mb-8">Kelola kategori untuk pengelompokan barang.</p>
 
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <?php
+        // Display status messages from redirects
+        if (isset($_GET['status'])) {
+            $status = htmlspecialchars($_GET['status']);
+            $message = '';
+            $class = 'bg-green-100 border-green-400 text-green-700';
+            switch ($status) {
+                case 'added':
+                    $message = 'Kategori berhasil ditambahkan!';
+                    break;
+                case 'edited':
+                    $message = 'Kategori berhasil diperbarui!';
+                    break;
+                case 'deleted':
+                    $message = 'Kategori berhasil dihapus!';
+                    break;
+                default:
+                    $message = 'Operasi berhasil.';
+                    break;
+            }
+            echo "<div class='p-4 mb-4 text-sm rounded-lg border {$class}' role='alert'>{$message}</div>";
+        }
+        if (isset($_GET['error'])) {
+            $error = htmlspecialchars($_GET['error']);
+            $message = 'Terjadi kesalahan saat melakukan operasi.';
+            $class = 'bg-red-100 border-red-400 text-red-700';
+            switch ($error) {
+                case 'nama_kategori_empty':
+                    $message = 'Nama kategori tidak boleh kosong.';
+                    break;
+                case 'update_failed':
+                    $message = 'Gagal memperbarui kategori.';
+                    break;
+                case 'add_failed':
+                    $message = 'Gagal menambahkan kategori.';
+                    break;
+                case 'delete_failed':
+                    $message = 'Gagal menghapus kategori.';
+                    break;
+                case 'prepare_failed':
+                case 'prepare_failed_delete':
+                    $message = 'Kesalahan sistem saat menyiapkan operasi database.';
+                    break;
+                default:
+                    $message = 'Terjadi kesalahan yang tidak diketahui.';
+                    break;
+            }
+            echo "<div class='p-4 mb-4 text-sm rounded-lg border {$class}' role='alert'>{$message}</div>";
+        }
+        ?>
+
+        <div class="bg-white p-6 rounded shadow-md">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-semibold text-gray-800">Daftar Kategori</h2>
                 <a href="#" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300" onclick="openAddModal()">Tambah Kategori Baru</a>
@@ -36,7 +94,28 @@
                         </tr>
                     </thead>
                     <tbody class="text-gray-600 text-sm font-light" id="categoryTableBody">
-                        </tbody>
+                        <?php if ($categories && $categories->num_rows > 0) : ?>
+                            <?php while ($row = $categories->fetch_assoc()) : ?>
+                                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap"><?= htmlspecialchars($row['id']) ?></td>
+                                    <td class="py-3 px-6 text-left"><?= htmlspecialchars($row['nama_kategori']) ?></td>
+                                    <td class="py-3 px-6 text-left"><?= htmlspecialchars($row['deskripsi']) ?></td>
+                                    <td class="py-3 px-6 text-center">
+                                        <div class="flex item-center justify-center space-x-3">
+                                            <button onclick='openEditModal(<?= json_encode($row) ?>)' class="text-blue-600 hover:underline font-medium">Edit</button>
+                                            <a href="../../controllers/admin/categories.php?delete=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus kategori ini?')" class="text-red-600 hover:underline font-medium">Hapus</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else : ?>
+                            <tr>
+                                <td colspan="4" class="py-4 px-6 text-center text-gray-500">
+                                    <?php echo isset($error_message) ? $error_message : "Tidak ada kategori yang ditemukan."; ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
                 </table>
             </div>
 
@@ -49,158 +128,29 @@
 
         </div>
     </main>
-    <?php include_once 'components/footer.php'?>
+    <?php include_once 'components/footer.php' ?>
 
-    <div id="categoryModal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">&times;</span>
+    <div id="categoryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-md shadow-lg w-full max-w-md relative">
+            <span class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl cursor-pointer" onclick="closeModal()">&times;</span>
             <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-6">Tambah Kategori Baru</h2>
-            <form id="categoryForm">
-                <input type="hidden" id="categoryId">
+            <form id="categoryForm" method="POST" action="../../controllers/admin/categories.php"> <input type="hidden" name="id" id="categoryId">
                 <div class="mb-4">
                     <label for="categoryName" class="block text-gray-700 text-sm font-semibold mb-2">Nama Kategori</label>
-                    <input type="text" id="categoryName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    <input type="text" id="categoryName" name="nama_kategori" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                 </div>
                 <div class="mb-6">
                     <label for="categoryDescription" class="block text-gray-700 text-sm font-semibold mb-2">Deskripsi</label>
-                    <textarea id="categoryDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea id="categoryDescription" name="deskripsi" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                 </div>
                 <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-800 px-5 py-2 rounded-md hover:bg-gray-400 transition duration-300">Batal</button>
-                    <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition duration-300">Simpan</button>
+                    <button type="submit" name="submit_category" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition duration-300">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
-
-
-    <script>
-        // Data kategori dummy (global agar bisa diakses fungsi lain)
-        let categoriesData = [
-            { id: 1, name: 'Elektronik', description: 'Produk-produk terkait elektronik dan gadget.' },
-            { id: 2, name: 'Pakaian', description: 'Semua jenis pakaian dan aksesoris fashion.' },
-            { id: 3, name: 'Makanan', description: 'Produk makanan jadi, bahan makanan, dan olahan.' },
-            { id: 4, name: 'Minuman', description: 'Berbagai jenis minuman, baik kemasan maupun segar.' },
-            { id: 5, name: 'Peralatan Rumah Tangga', description: 'Perlengkapan untuk kebutuhan rumah tangga.' }
-        ];
-
-        const categoryTableBody = document.getElementById('categoryTableBody');
-        const categoryModal = document.getElementById('categoryModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const categoryForm = document.getElementById('categoryForm');
-        const categoryId = document.getElementById('categoryId');
-        const categoryName = document.getElementById('categoryName');
-        const categoryDescription = document.getElementById('categoryDescription');
-        let currentEditingId = null; // Untuk melacak kategori yang sedang diedit
-
-        // Fungsi untuk menampilkan data kategori ke tabel
-        function renderCategories() {
-            categoryTableBody.innerHTML = ''; // Bersihkan tabel sebelum render ulang
-            categoriesData.forEach(category => {
-                const row = `
-                    <tr class="border-b border-gray-200 hover:bg-gray-100">
-                        <td class="py-3 px-6 text-left whitespace-nowrap">${category.id}</td>
-                        <td class="py-3 px-6 text-left">${category.name}</td>
-                        <td class="py-3 px-6 text-left">${category.description}</td>
-                        <td class="py-3 px-6 text-center">
-                            <div class="flex item-center justify-center space-x-2">
-                                <button class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Edit" onclick="openEditModal(${category.id})">
-                                    ✏️
-                                </button>
-                                <button class="w-6 h-6 transform hover:text-red-500 hover:scale-110" title="Hapus" onclick="deleteCategory(${category.id})">
-                                    🗑️
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                categoryTableBody.innerHTML += row;
-            });
-        }
-
-        // --- Fungsionalitas Hapus (Delete) ---
-        function deleteCategory(id) {
-            if (confirm(`Apakah Anda yakin ingin menghapus kategori dengan ID ${id}?`)) {
-                categoriesData = categoriesData.filter(category => category.id !== id);
-                renderCategories(); // Render ulang tabel setelah penghapusan
-            }
-        }
-
-        // --- Fungsionalitas Tambah (Create) & Edit (Update) via Modal ---
-        function openAddModal() {
-            modalTitle.textContent = 'Tambah Kategori Baru';
-            categoryForm.reset(); // Kosongkan formulir
-            categoryId.value = ''; // Pastikan ID kosong untuk mode tambah
-            currentEditingId = null;
-            categoryModal.style.display = 'flex'; // Tampilkan modal
-        }
-
-        function openEditModal(id) {
-            modalTitle.textContent = 'Edit Kategori';
-            const categoryToEdit = categoriesData.find(category => category.id === id);
-            if (categoryToEdit) {
-                categoryId.value = categoryToEdit.id;
-                categoryName.value = categoryToEdit.name;
-                categoryDescription.value = categoryToEdit.description;
-                currentEditingId = id; // Simpan ID kategori yang sedang diedit
-                categoryModal.style.display = 'flex'; // Tampilkan modal
-            }
-        }
-
-        function closeModal() {
-            categoryModal.style.display = 'none'; // Sembunyikan modal
-        }
-
-        categoryForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Mencegah form submit default
-
-            const id = categoryId.value ? parseInt(categoryId.value) : null;
-            const name = categoryName.value;
-            const description = categoryDescription.value;
-
-            if (currentEditingId) {
-                // Mode Edit (Update)
-                const categoryIndex = categoriesData.findIndex(cat => cat.id === id);
-                if (categoryIndex !== -1) {
-                    categoriesData[categoryIndex] = {
-                        id: id,
-                        name: name,
-                        description: description
-                    };
-                }
-            } else {
-                // Mode Tambah (Create)
-                const newId = categoriesData.length > 0 ? Math.max(...categoriesData.map(cat => cat.id)) + 1 : 1;
-                categoriesData.push({
-                    id: newId,
-                    name: name,
-                    description: description
-                });
-            }
-            renderCategories(); // Render ulang tabel setelah penambahan/pembaruan
-            closeModal(); // Tutup modal
-        });
-
-
-        // --- Logika Autentikasi dan Render Awal ---
-        document.addEventListener('DOMContentLoaded', function() {
-            // Perbaikan footer (jika belum ada)
-            document.body.classList.add('flex', 'flex-col', 'min-h-screen');
-            document.querySelector('main').classList.add('flex-grow');
-
-            if (localStorage.getItem('userRole') !== 'admin') {
-                window.location.href = '../../index.php'; // Kembali ke index.php di root
-            }
-            renderCategories(); // Panggil fungsi untuk menampilkan data saat halaman dimuat
-        });
-
-        // Fungsi logout client-side (tetap sama)
-        function logoutClientSide(event) {
-            event.preventDefault();
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php'; // Path ke logout.php di root
-        }
-    </script>
+    <script src="js/categories.js"></script>
 </body>
+
 </html>

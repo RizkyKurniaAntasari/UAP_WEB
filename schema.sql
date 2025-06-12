@@ -9,3 +9,9 @@ CREATE TABLE pemasok (
   telepon VARCHAR(20),
   alamat TEXT
 );
+
+CREATE TABLE kategori(
+  id_kategori INT AUTO_INCREMENT PRIMARY KEY,
+  nama_kategori VARCHAR(255),
+  deskripsi VARCHAR(255)
+);
