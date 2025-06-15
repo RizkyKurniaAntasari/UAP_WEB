@@ -27,7 +27,7 @@ $pemasok = $conn->query("SELECT * FROM pemasok ORDER BY id DESC");
             </div>
 
             <div class="mb-4">
-                <input type="text" id="suppliersSearch" placeholder="Cari yang kamu butuhkan" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-1/3">
+                <input type="text" id="suppliersSearch" placeholder="Cari pemasok..." class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-1/3">
             </div>
 
             <table class="min-w-full table-auto border">

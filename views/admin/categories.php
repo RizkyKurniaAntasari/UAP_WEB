@@ -12,38 +12,6 @@
     <title>Manajemen Kategori - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
-    <style>
-        /* Gaya tambahan untuk modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px; /* Sesuaikan lebar modal */
-            position: relative;
-        }
-        .close-button {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6B7280; /* gray-500 */
-        }
-    </style>
 </head>
 
 <body class="bg-gray-100 font-sans flex min-h-screen flex-col">
@@ -108,7 +76,7 @@
         <div class="bg-white p-6 rounded shadow-md">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-semibold text-gray-800">Daftar Kategori</h2>
-                <button id="addCategoryBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">Tambah Kategori Baru</button>
+                <button onclick="openAddModal()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">Tambah Kategori Baru</button>
             </div>
 
             <div class="mb-4">
@@ -119,23 +87,23 @@
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
                     <thead>
                         <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
-                            <th class="py-3 px-6 text-left">ID</th>
-                            <th class="py-3 px-6 text-left">Nama Kategori</th>
-                            <th class="py-3 px-6 text-left">Deskripsi</th>
-                            <th class="py-3 px-6 text-center">Aksi</th>
+                            <th class="py-3 px-6">ID</th>
+                            <th class="py-3 px-6">Nama Kategori</th>
+                            <th class="py-3 px-6">Deskripsi</th>
+                            <th class="py-3 px-6">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-600 text-sm font-light" id="categoryTableBody">
+                    <tbody class="text-gray-600 text-sm font-light text-center" id="categoryTableBody">
                         <?php if ($categories && $categories->num_rows > 0) : ?>
                             <?php while ($row = $categories->fetch_assoc()) : ?>
                                 <tr class="border-b border-gray-200 hover:bg-gray-100">
-                                    <td class="py-3 px-6 text-left whitespace-nowrap"><?= htmlspecialchars($row['id']) ?></td>
-                                    <td class="py-3 px-6 text-left"><?= htmlspecialchars($row['nama_kategori']) ?></td>
-                                    <td class="py-3 px-6 text-left"><?= htmlspecialchars($row['deskripsi']) ?></td>
+                                    <td class="py-3 px-6  whitespace-nowrap"><?= htmlspecialchars($row['id']) ?></td>
+                                    <td class="py-3 px-6 "><?= htmlspecialchars($row['nama_kategori']) ?></td>
+                                    <td class="py-3 px-6 "><?= htmlspecialchars($row['deskripsi']) ?></td>
                                     <td class="py-3 px-6 text-center">
                                         <div class="flex item-center justify-center space-x-3">
-                                            <button onclick='openEditModal(<?= json_encode($row) ?>)' class="text-blue-600 hover:underline font-medium">Edit</button>
-                                            <a href="../../controllers/admin/categories.php?delete=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus kategori ini?')" class="text-red-600 hover:underline font-medium">Hapus</a>
+                                            <button onclick='openEditModal(<?= json_encode($row) ?>)' class="text-blue-600 hover:underline font-normal">Edit</button>
+                                            <a href="../../controllers/admin/categories.php?delete=<?= $row['id'] ?>" onclick="return confirm('Yakin ingin menghapus kategori ini?')" class="text-red-600 hover:underline font-normal">Hapus</a>
                                         </div>
                                     </td>
                                 </tr>

@@ -113,7 +113,7 @@
             event.preventDefault();
             localStorage.removeItem('userRole');
             localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php';
+            // window.location.href = '../../logout.php';
         }
 
         // --- Variabel Global untuk Data Produk dan Paginasi ---
@@ -357,7 +357,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Logika autentikasi sisi klien (tetap sama)
             if (localStorage.getItem('userRole') !== 'pemasok') {
-                window.location.href = '../../index.php'; // Kembali ke index.php di root
+                // window.location.href = '../../index.php'; // Kembali ke index.php di root
             }
 
             // Data produk dummy (hanya produk yang diasosiasikan dengan 'pemasok@example.com')

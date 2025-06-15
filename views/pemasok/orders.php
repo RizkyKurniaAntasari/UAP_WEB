@@ -142,7 +142,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Logika autentikasi sisi klien
             if (localStorage.getItem('userRole') !== 'pemasok') {
-                window.location.href = '../../index.php';
+                // window.location.href = '../../index.php';
                 return;
             }
 
