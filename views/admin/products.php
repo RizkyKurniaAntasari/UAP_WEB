@@ -115,11 +115,11 @@ include_once __DIR__ . '/../../controllers/admin/products.php';
                                     <td class="py-3 px-6 text-center">Rp <?php echo number_format(htmlspecialchars($barang['harga_jual']), 0, ',', '.'); ?></td>
                                     <td class="py-3 px-6 text-center">
                                         <div class="flex item-center justify-center space-x-2">
-                                            <button onclick="openEditProductModal(<?php echo htmlspecialchars(json_encode($barang)); ?>)" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 rounded-md shadow-sm transition-colors duration-200">Edit</button>
+                                            <button onclick="openEditProductModal(<?php echo htmlspecialchars(json_encode($barang)); ?>)" class="text-blue-500 font-normal py-1 px-3 rounded-md shadow-sm transition-colors duration-200">Edit</button>
                                             <form action="../../controllers/admin/products.php" method="POST" onsubmit="return confirmDelete()">
                                                 <input type="hidden" name="action" value="delete_barang">
                                                 <input type="hidden" name="id" value="<?php echo htmlspecialchars($barang['id']); ?>">
-                                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded-md shadow-sm transition-colors duration-200">Hapus</button>
+                                                <button type="submit" class="text-red-500 font-normal py-1 px-3 rounded-md shadow-sm transition-colors duration-200">Hapus</button>
                                             </form>
                                         </div>
                                     </td>
