@@ -1,3 +1,24 @@
+<?php
+require_once __DIR__ . '/../../controllers/admin/transactions.php';
+$all_transactions = $conn->query("
+  SELECT
+    t.id                   AS id_transaksi,
+    t.tanggal,
+    t.barang_id,       
+    b.nama_barang,
+    t.jenis,
+    t.kuantitas,
+    t.stok_sesudah         AS stok_akhir,
+    t.pemasok_id,      
+    p.kontak               AS nama_pemasok,
+    t.catatan
+  FROM transaksi t
+  JOIN barang b   ON t.barang_id  = b.id
+  LEFT JOIN pemasok p ON t.pemasok_id = p.id
+  ORDER BY t.tanggal DESC
+");
+
+?>
 <!DOCTYPE html>
 <html lang="id">
 
@@ -7,38 +28,6 @@
     <title>Manajemen Transaksi - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
-    <style>
-        /* Gaya tambahan untuk modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px; /* Sesuaikan lebar modal */
-            position: relative;
-        }
-        .close-button {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6B7280; /* gray-500 */
-        }
-    </style>
 </head>
 
 <body class="bg-gray-100 font-sans flex flex-col min-h-screen">
@@ -83,66 +72,126 @@
                             <th class="py-3 px-6 text-left">Nama Barang</th>
                             <th class="py-3 px-6 text-center">Jenis</th>
                             <th class="py-3 px-6 text-center">Kuantitas</th>
-                            <th class="py-3 px-6 text-left">Oleh User</th>
+                            <th class="py-3 px-6 text-center">Stok Akhir</th>
+                            <th class="py-3 px-6 text-left">Oleh User/Pemasok</th>
                             <th class="py-3 px-6 text-left">Catatan</th>
                             <th class="py-3 px-6 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="text-gray-600 text-sm font-light" id="transactionTableBody">
-                        </tbody>
+                        <?php if ($all_transactions && $all_transactions->num_rows > 0): ?>
+                            <?php while ($transaction = $all_transactions->fetch_assoc()): ?>
+                                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                                    <td class="py-3 px-6 text-left whitespace-nowrap">
+                                        <?= htmlspecialchars($transaction['id_transaksi']) ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-left">
+                                        <?= htmlspecialchars(date('d-m-Y H:i', strtotime($transaction['tanggal']))) ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-left">
+                                        <?= htmlspecialchars($transaction['nama_barang']) ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-center">
+                                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                        <?= ($transaction['jenis'] === 'masuk') ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800' ?>">
+                                            <?= htmlspecialchars(ucfirst($transaction['jenis'])) ?>
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-6 text-center">
+                                        <?= htmlspecialchars($transaction['kuantitas']) ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-center">
+                                        <?= htmlspecialchars($transaction['stok_akhir']) ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-left">
+                                        <?= ($transaction['jenis'] === 'masuk' && !empty($transaction['nama_pemasok']))
+                                            ? htmlspecialchars($transaction['nama_pemasok'])
+                                            : 'Penjualan / Internal' ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-left">
+                                        <?= htmlspecialchars($transaction['catatan']) ?>
+                                    </td>
+                                    <td class="py-3 px-6 text-center space-x-2">
+                            
+                                        <!-- Tombol Hapus -->
+                                        <a
+                                            href="?hapus=<?= $transaction['id_transaksi'] ?>"
+                                            onclick="return confirm('Yakin ingin menghapus transaksi ini?');"
+                                            class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">
+                                            Hapus
+                                        </a>
+                                    </td>
+
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="9" class="py-6 text-center text-gray-500">
+                                    Tidak ada data transaksi ditemukan.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+
                 </table>
             </div>
 
             <div class="flex justify-center mt-6 space-x-2" id="paginationContainer">
-                </div>
+
+            </div>
 
         </div>
     </main>
 
-    <?php include_once 'components/footer.php' ?>
+    <?php include_once 'components/footer.php'; ?>
 
-    <div id="transactionModal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-6">Buat Transaksi Baru</h2>
-            <form id="transactionForm">
-                <input type="hidden" id="transactionId">
-                <div class="mb-4">
-                    <label for="transactionDate" class="block text-gray-700 text-sm font-semibold mb-2">Tanggal</label>
-                    <input type="date" id="transactionDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+    <!-- Modal -->
+    <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h2 id="modalTitle" class="text-xl font-bold mb-4">Tambah Transaksi</h2>
+            <form id="transactionForm" class="space-y-4">
+                <input type="hidden" id="transactionId" name="transactionId">
+
+                <div>
+                    <label for="transactionBarangId" class="block text-sm font-medium text-gray-700">Barang</label>
+                    <input type="text" id="transactionBarangId" name="transactionBarangId" required class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="ID atau nama barang...">
                 </div>
-                <div class="mb-4">
-                    <label for="transactionProduct" class="block text-gray-700 text-sm font-semibold mb-2">Nama Barang</label>
-                    <input type="text" id="transactionProduct" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ketik nama barang..." required>
-                </div>
-                <div class="mb-4">
-                    <label for="transactionQuantity" class="block text-gray-700 text-sm font-semibold mb-2">Kuantitas</label>
-                    <input type="number" id="transactionQuantity" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required min="1">
-                </div>
-                <div class="mb-4">
-                    <label for="transactionTypeModal" class="block text-gray-700 text-sm font-semibold mb-2">Jenis Transaksi</label>
-                    <select id="transactionTypeModal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+
+                <div>
+                    <label for="transactionJenis" class="block text-sm font-medium text-gray-700">Jenis Transaksi</label>
+                    <select id="transactionJenis" name="transactionJenis" required class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">-- Pilih Jenis --</option>
                         <option value="masuk">Masuk</option>
                         <option value="keluar">Keluar</option>
                     </select>
                 </div>
-                <div class="mb-4">
-                    <label for="transactionUser" class="block text-gray-700 text-sm font-semibold mb-2">Oleh User</label>
-                    <input type="text" id="transactionUser" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+
+                <div>
+                    <label for="transactionKuantitas" class="block text-sm font-medium text-gray-700">Kuantitas</label>
+                    <input type="number" id="transactionKuantitas" name="transactionKuantitas" min="1" required class="w-full border border-gray-300 rounded-md px-3 py-2">
                 </div>
-                <div class="mb-6">
-                    <label for="transactionNotes" class="block text-gray-700 text-sm font-semibold mb-2">Catatan</label>
-                    <textarea id="transactionNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+
+                <div>
+                    <label for="transactionPemasokId" class="block text-sm font-medium text-gray-700">Pemasok</label>
+                    <input type="text" id="transactionPemasokId" name="transactionPemasokId" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Nama atau ID Pemasok (jika ada)">
                 </div>
-                <div class="flex justify-end space-x-3">
-                    <button type="button" onclick="closeModal()" class="bg-gray-300 text-gray-800 px-5 py-2 rounded-md hover:bg-gray-400 transition duration-300">Batal</button>
-                    <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition duration-300">Simpan</button>
+
+                <div>
+                    <label for="transactionCatatan" class="block text-sm font-medium text-gray-700">Catatan</label>
+                    <textarea id="transactionCatatan" name="transactionCatatan" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script src="js/transactions.js"></script>
+
+    <script src="js/transaction.js"></script>
+
 </body>
 
 </html>
