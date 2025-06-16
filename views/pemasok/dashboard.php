@@ -10,7 +10,6 @@ if (isset($_SESSION['loggedin'])) {
     $sql = "SELECT * FROM barang WHERE id_pemasok = '$id'";
     $dataBarang = mysqli_query($conn, $sql);
     
-    
     $jumlahProduk = $dataBarang->num_rows;
     $pesananBaru = 5;
     

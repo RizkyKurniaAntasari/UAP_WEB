@@ -82,9 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
-    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-        <h2 class="text-4xl font-bold text-center text-gray-800 mb-8">Masuk ke Akun Anda</h2>
+<body class="flex items-center justify-center min-h-screen font-sans bg-gray-100">
+    <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-xl">
+        <h2 class="mb-8 text-4xl font-bold text-center text-gray-800">Masuk ke Akun Anda</h2>
         <form id="loginForm" action="login.php" method="POST">
             <?php if (!empty($errorMessage)): ?>
                 <div class="error-message">
@@ -93,35 +93,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <div class="mb-6">
-                <label for="email" class="block text-gray-700 text-sm font-semibold mb-2">Email</label>
+                <label for="email" class="block mb-2 text-sm font-semibold text-gray-700">Email</label>
                 <input 
                     type="email" 
                     id="email" 
                     name="email" 
                     autocomplete="email"
                     value="<?= htmlspecialchars($submittedEmail); ?>"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" 
+                    class="w-full px-4 py-2 transition duration-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
                     placeholder="Masukkan email Anda" 
                     required>
             </div>
             <div class="mb-6">
-                <label for="password" class="block text-gray-700 text-sm font-semibold mb-2">Password</label>
+                <label for="password" class="block mb-2 text-sm font-semibold text-gray-700">Password</label>
                 <input 
                     type="password" 
                     id="password" 
                     name="password" 
                     autocomplete="current-password"
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" 
+                    class="w-full px-4 py-2 transition duration-200 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
                     placeholder="Masukkan password Anda" 
                     required>
             </div>
-            <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 shadow-md">Login</button>
+            <button type="submit" class="w-full py-3 font-semibold text-white transition duration-300 bg-blue-600 rounded-lg shadow-md hover:bg-blue-700">Login</button>
         </form>
-        <p class="text-center text-gray-600 text-sm mt-6">
+        <p class="mt-6 text-sm text-center text-gray-600">
             Belum punya akun?
-            <a href="register.php" class="text-blue-600 hover:underline font-semibold">Daftar sekarang</a>
+            <a href="register.php" class="font-semibold text-blue-600 hover:underline">Daftar sekarang</a>
         </p>
-        <p class="text-center text-gray-600 text-sm mt-3">
+        <p class="mt-3 text-sm text-center text-gray-600">
             <a href="index.php" class="text-blue-600 hover:underline">Kembali ke Beranda</a>
         </p>
     </div>
