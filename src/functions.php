@@ -8,12 +8,12 @@ function redirect($url) {
 }
 
 function redirect_views_admin($url) {
-    header("Location: " . BASE_URL . "/views/admin" . $url);
+    header("Location: /views/admin" . $url);
     exit;
 }
 
 function redirect_views_pemasok($url) {
-    header("Location: " . BASE_URL . "/views/pemasok" . $url);
+    header("Location: /views/pemasok" . $url);
     exit;
 }
 

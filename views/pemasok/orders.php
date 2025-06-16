@@ -16,33 +16,32 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans flex flex-col min-h-screen">
-
-    <nav class="bg-green-700 p-4 shadow-md text-white">
-        <div class="container mx-auto flex justify-between items-center">
+<body class="flex flex-col min-h-screen font-sans bg-gray-100">
+    <nav class="p-4 text-white bg-green-700 shadow-md">
+        <div class="container flex items-center justify-between mx-auto">
             <a href="dashboard.php" class="text-2xl font-bold">Pemasok Dashboard</a>
             <div class="flex space-x-4">
                 <a href="dashboard.php" class="hover:text-green-200">Beranda</a>
                 <a href="my_products.php" class="hover:text-green-200">Produk Saya</a>
-                <a href="orders.php" class="hover:text-green-200 font-semibold">Pesanan</a>
-                <a href="../../logout.php" class="bg-red-600 px-3 py-1 rounded-md hover:bg-red-700 transition duration-300" onclick="logoutClientSide(event)">Logout</a>
+                <a href="orders.php" class="font-semibold hover:text-green-200">Pesanan</a>
+                <a href="../../logout.php" class="px-3 py-1 transition duration-300 bg-red-600 rounded-md hover:bg-red-700" onclick="logoutClientSide(event)">Logout</a>
             </div>
         </div>
     </nav>
 
-    <main class="container mx-auto px-6 py-8 flex-grow">
-        <h1 class="text-4xl font-bold text-gray-800 mb-6">Daftar Pesanan</h1>
-        <p class="text-gray-700 mb-8">Lihat pesanan yang melibatkan produk Anda dan statusnya.</p>
+    <main class="container flex-grow px-6 py-8 mx-auto">
+        <h1 class="mb-6 text-4xl font-bold text-gray-800">Daftar Pesanan</h1>
+        <p class="mb-8 text-gray-700">Lihat pesanan yang melibatkan produk Anda dan statusnya.</p>
 
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <div class="flex justify-between items-center mb-4">
+        <div class="p-6 mb-8 bg-white rounded-lg shadow-md">
+            <div class="flex items-center justify-between mb-4">
                 <h2 class="text-2xl font-semibold text-gray-800">Pesanan Masuk</h2>
             </div>
 
-            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
                 <div>
-                    <label for="orderStatus" class="block text-gray-700 text-sm font-semibold mb-1">Status Pesanan:</label>
-                    <select id="orderStatus" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 w-full">
+                    <label for="orderStatus" class="block mb-1 text-sm font-semibold text-gray-700">Status Pesanan:</label>
+                    <select id="orderStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                         <option value="">Semua Status</option>
                         <option value="pending">Pending</option>
                         <option value="diproses">Diproses</option>
@@ -52,29 +51,29 @@
                     </select>
                 </div>
                 <div>
-                    <label for="orderSearch" class="block text-gray-700 text-sm font-semibold mb-1">Cari Pesanan:</label>
-                    <input type="text" id="orderSearch" placeholder="Cari ID/Nama Produk..." class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 w-full">
+                    <label for="orderSearch" class="block mb-1 text-sm font-semibold text-gray-700">Cari Pesanan:</label>
+                    <input type="text" id="orderSearch" placeholder="Cari ID/Nama Produk..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
-                <div class="md:col-span-2 text-right">
-                    <button id="filterOrdersBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition duration-300">Filter Pesanan</button>
-                    <button id="resetFilterBtn" class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500 transition duration-300 ml-2 hidden">Reset Filter</button>
+                <div class="text-right md:col-span-2">
+                    <button id="filterOrdersBtn" class="px-4 py-2 text-white transition duration-300 bg-indigo-600 rounded-md hover:bg-indigo-700">Filter Pesanan</button>
+                    <button id="resetFilterBtn" class="hidden px-4 py-2 ml-2 text-white transition duration-300 bg-gray-400 rounded-md hover:bg-gray-500">Reset Filter</button>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
                     <thead>
-                        <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
-                            <th class="py-3 px-6 text-left">ID Pesanan</th>
-                            <th class="py-3 px-6 text-left">Tanggal Pesanan</th>
-                            <th class="py-3 px-6 text-left">Nama Produk</th>
-                            <th class="py-3 px-6 text-center">Kuantitas</th>
-                            <th class="py-3 px-6 text-right">Total Harga</th>
-                            <th class="py-3 px-6 text-center">Status</th>
-                            <th class="py-3 px-6 text-center">Aksi</th>
+                        <tr class="text-sm leading-normal text-gray-700 uppercase bg-gray-200">
+                            <th class="px-6 py-3 text-left">ID Pesanan</th>
+                            <th class="px-6 py-3 text-left">Tanggal Pesanan</th>
+                            <th class="px-6 py-3 text-left">Nama Produk</th>
+                            <th class="px-6 py-3 text-center">Kuantitas</th>
+                            <th class="px-6 py-3 text-right">Total Harga</th>
+                            <th class="px-6 py-3 text-center">Status</th>
+                            <th class="px-6 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-600 text-sm font-light" id="orderTableBody">
+                    <tbody class="text-sm font-light text-gray-600" id="orderTableBody">
                         </tbody>
                 </table>
             </div>
@@ -85,15 +84,15 @@
         </div>
     </main>
 
-    <footer class="bg-gray-800 text-white py-4 text-center mt-8">
-        <div class="container mx-auto px-6">
+    <footer class="py-4 mt-8 text-center text-white bg-gray-800">
+        <div class="container px-6 mx-auto">
             <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
         </div>
     </footer>
 
-    <div id="detailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center modal-overlay">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md modal-content">
-            <h3 class="text-2xl font-bold mb-6 text-gray-800">Detail Pesanan</h3>
+    <div id="detailModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
+        <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-xl modal-content">
+            <h3 class="mb-6 text-2xl font-bold text-gray-800">Detail Pesanan</h3>
             <div class="space-y-4 text-gray-700">
                 <p><strong>ID Pesanan:</strong> <span id="detailOrderId"></span></p>
                 <p><strong>Tanggal Pesanan:</strong> <span id="detailOrderDate"></span></p>
@@ -104,17 +103,17 @@
                 <p><strong>Pemasok Email:</strong> <span id="detailSupplierEmail"></span></p>
             </div>
             <div class="mt-8 text-right">
-                <button onclick="closeDetailModal()" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 font-semibold">Tutup</button>
+                <button onclick="closeDetailModal()" class="px-6 py-2 font-semibold text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Tutup</button>
             </div>
         </div>
     </div>
 
-    <div id="statusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center modal-overlay">
-        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm modal-content">
-            <h3 class="text-2xl font-bold mb-6 text-gray-800">Ubah Status Pesanan <span id="statusModalOrderId" class="text-indigo-600"></span></h3>
+    <div id="statusModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
+        <div class="w-full max-w-sm p-8 bg-white rounded-lg shadow-xl modal-content">
+            <h3 class="mb-6 text-2xl font-bold text-gray-800">Ubah Status Pesanan <span id="statusModalOrderId" class="text-indigo-600"></span></h3>
             <div class="mb-4">
-                <label for="newOrderStatus" class="block text-gray-700 text-sm font-bold mb-2">Pilih Status Baru:</label>
-                <select id="newOrderStatus" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 w-full">
+                <label for="newOrderStatus" class="block mb-2 text-sm font-bold text-gray-700">Pilih Status Baru:</label>
+                <select id="newOrderStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                     <option value="pending">Pending</option>
                     <option value="diproses">Diproses</option>
                     <option value="dikirim">Dikirim</option>
@@ -122,9 +121,9 @@
                     <option value="dibatalkan">Dibatalkan</option>
                 </select>
             </div>
-            <div class="flex justify-end space-x-4 mt-8">
-                <button onclick="closeStatusModal()" class="bg-gray-300 text-gray-800 px-6 py-2 rounded-md hover:bg-gray-400 font-semibold">Batal</button>
-                <button id="saveStatusBtn" class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 font-semibold">Simpan</button>
+            <div class="flex justify-end mt-8 space-x-4">
+                <button onclick="closeStatusModal()" class="px-6 py-2 font-semibold text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Batal</button>
+                <button id="saveStatusBtn" class="px-6 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">Simpan</button>
             </div>
         </div>
     </div>
@@ -213,7 +212,7 @@
                 if (paginatedOrders.length === 0) {
                     orderTableBody.innerHTML = `
                         <tr>
-                            <td colspan="7" class="py-4 px-6 text-center text-gray-500">Tidak ada pesanan yang ditemukan.</td>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Tidak ada pesanan yang ditemukan.</td>
                         </tr>
                     `;
                     renderPagination(); // Tetap render paginasi
@@ -234,18 +233,18 @@
 
                     const row = `
                         <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="py-3 px-6 text-left whitespace-nowrap">${order.id}</td>
-                            <td class="py-3 px-6 text-left">${order.date}</td>
-                            <td class="py-3 px-6 text-left">${order.product}</td>
-                            <td class="py-3 px-6 text-center">${order.quantity}</td>
-                            <td class="py-3 px-6 text-right">${formatRupiah(total_price)}</td>
-                            <td class="py-3 px-6 text-center">
+                            <td class="px-6 py-3 text-left whitespace-nowrap">${order.id}</td>
+                            <td class="px-6 py-3 text-left">${order.date}</td>
+                            <td class="px-6 py-3 text-left">${order.product}</td>
+                            <td class="px-6 py-3 text-center">${order.quantity}</td>
+                            <td class="px-6 py-3 text-right">${formatRupiah(total_price)}</td>
+                            <td class="px-6 py-3 text-center">
                                 <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColorClass}">
                                     ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                 </span>
                             </td>
-                            <td class="py-3 px-6 text-center">
-                                <div class="flex item-center justify-center space-x-2">
+                            <td class="px-6 py-3 text-center">
+                                <div class="flex justify-center space-x-2 item-center">
                                     <button onclick="viewOrderDetail('${order.id}')" class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Lihat Detail">
                                         👁️
                                     </button>
