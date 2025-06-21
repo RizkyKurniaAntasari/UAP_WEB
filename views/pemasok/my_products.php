@@ -1,72 +1,193 @@
 <?php
 session_start();
 include '../../src/db.php';
-include '../../src/functions.php';
+include '../../src/functions.php'; // Pastikan formatRupiah dan getKategori ada di sini
+
+// Pastikan user sudah login sebagai pemasok
+if (!isset($_SESSION['nama']) || !isset($_SESSION['email'])) {
+    header("Location: ../../login.php"); // Ganti dengan halaman login yang sesuai
+    exit;
+}
 
 $cari = "";
 if (isset($_POST['cari'])) {
-    $cari = $_POST['keyCari'];
+    $cari = mysqli_real_escape_string($conn, $_POST['keyCari']);
 }
 
-$sql = "SELECT * FROM barang WHERE id_pemasok = '{$_SESSION['id']}' AND nama_barang LIKE '%$cari%'";
-$result = mysqli_query($conn, $sql);
-$dataBarang = [];
-if ($result && mysqli_num_rows($result) > 0) {
-    while ($row = mysqli_fetch_assoc($result)) {
-        $dataBarang[] = $row;
+$nama = $_SESSION['nama'];
+$email = $_SESSION['email'];
+
+// Ambil ID Pemasok
+$getPemasok = mysqli_prepare($conn, "SELECT id FROM pemasok WHERE kontak = ? AND email = ?");
+mysqli_stmt_bind_param($getPemasok, "ss", $nama, $email);
+mysqli_stmt_execute($getPemasok);
+$resultPemasok = mysqli_stmt_get_result($getPemasok);
+$idPemasok = null;
+if ($row = mysqli_fetch_assoc($resultPemasok)) {
+    $idPemasok = $row['id'];
+} else {
+    // Jika ID Pemasok tidak ditemukan, bisa jadi user tidak valid atau data di pemasok tidak sinkron.
+    // Redirect ke logout atau halaman error
+    header("Location: ../../logout.php"); // Redirect ke logout
+    exit;
+}
+
+// Ambil semua kategori untuk dropdown
+$list_kategori_query = mysqli_query($conn, "SELECT id, nama_kategori FROM kategori ORDER BY nama_kategori ASC");
+$list_kategori = [];
+while ($cat = mysqli_fetch_assoc($list_kategori_query)) {
+    $list_kategori[] = $cat;
+}
+
+$editData = null; // Variabel untuk menyimpan data produk yang akan diedit
+$isEditMode = false; // Flag untuk menentukan apakah modal edit harus ditampilkan
+
+// Logika untuk menampilkan modal edit (jika ada parameter GET untuk edit)
+if (isset($_GET['action']) && $_GET['action'] === 'edit' && isset($_GET['id'])) {
+    $idToEdit = (int)$_GET['id'];
+    // Pastikan produk ini milik pemasok yang sedang login
+    $getEditProductSql = mysqli_prepare($conn, "SELECT * FROM barang WHERE id = ? AND id_pemasok = ?");
+    mysqli_stmt_bind_param($getEditProductSql, "ii", $idToEdit, $idPemasok);
+    mysqli_stmt_execute($getEditProductSql);
+    $resultEditProduct = mysqli_stmt_get_result($getEditProductSql);
+    if ($rowEdit = mysqli_fetch_assoc($resultEditProduct)) {
+        $editData = $rowEdit;
+        $isEditMode = true; // Set flag untuk menampilkan modal edit
+    } else {
+        // Jika produk tidak ditemukan atau bukan milik pemasok ini, redirect untuk membersihkan URL
+        header("Location: my_products.php");
+        exit;
     }
 }
 
+// ... (bagian atas kode PHP Anda)
+
+// Tambah Produk
 if (isset($_POST['tambahProduk'])) {
-    $namaBarang = $_POST['namaProduk'];
-    $idKategori = getIdKategori($_POST['kategoriProduk'], $conn);
-    $idPemasok = $_SESSION['id'];
-    $stok = $_POST['stokProduk'];
-    $satuan = $_POST['satuanProduk'];
-    $hargaBeli = $_POST['hargaBeliProduk'];
-    $hargaJual = $_POST['hargaJualProduk'];
-    $deskripsi = $_POST['deskripsiProduk'];
-    $sql = "INSERT INTO barang (nama_barang, id_kategori, id_pemasok, stok, satuan, harga_beli, harga_jual, deskripsi) 
-    VALUES ('{$namaBarang}', {$idKategori}, {$idPemasok}, {$stok}, '{$satuan}', {$hargaBeli}, {$hargaJual}, '{$deskripsi}')";
-    mysqli_query($conn, $sql);
-    header("Location: " . $_SERVER['REQUEST_URI']);
-    exit;
+    $namaBarang = mysqli_real_escape_string($conn, $_POST['namaProduk']);
+    $idKategori = (int) $_POST['kategoriProduk'];
+
+    // Validasi dan konversi untuk stok, harga_beli, harga_jual
+    // Jika kosong, kita anggap 0 untuk contoh ini, tapi bisa disesuaikan
+    $stok = isset($_POST['stokProduk']) && $_POST['stokProduk'] !== '' ? (int) $_POST['stokProduk'] : 0;
+    $satuan = mysqli_real_escape_string($conn, $_POST['satuanProduk']);
+    $hargaBeli = isset($_POST['hargaBeliProduk']) && $_POST['hargaBeliProduk'] !== '' ? (int) $_POST['hargaBeliProduk'] : 0;
+    $hargaJual = isset($_POST['hargaJualProduk']) && $_POST['hargaJualProduk'] !== '' ? (int) $_POST['hargaJualProduk'] : 0;
+    $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsiProduk']);
+
+    // ... (rest of the INSERT code, which should use prepared statements)
+    $insertSql = "INSERT INTO barang 
+        (nama_barang, id_kategori, id_pemasok, stok, satuan, harga_beli, harga_jual, deskripsi) 
+        VALUES 
+        (?, ?, ?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $insertSql);
+    // Perhatikan 'i' untuk integer, 's' untuk string
+    mysqli_stmt_bind_param($stmt, "siissiis", $namaBarang, $idKategori, $idPemasok, $stok, $satuan, $hargaBeli, $hargaJual, $deskripsi);
+
+    if (mysqli_stmt_execute($stmt)) {
+        header("Location: my_products.php?status=added");
+        exit;
+    } else {
+        die("Gagal tambah produk: " . mysqli_error($conn));
+    }
 }
 
-$editVisible = isset($_POST['editProduk']);
-
+// Edit Produk
 if (isset($_POST['editProdukBtn'])) {
-    $idEditProduk = $_POST['idEditProduk'];
-    $namaBarang = $_POST['namaProduk'];
-    $idKategori = getIdKategori($_POST['kategoriProduk'], $conn);
-    $idPemasok = $_SESSION['id'];
-    $stok = $_POST['stokProduk'];
-    $satuan = $_POST['satuanProduk'];
-    $hargaBeli = $_POST['hargaBeliProduk'];
-    $hargaJual = $_POST['hargaJualProduk'];
-    $deskripsi = $_POST['deskripsiProduk'];
-    $sql = "UPDATE barang SET
-    nama_barang = '{$namaBarang}', 
-    id_kategori = {$idKategori}, 
-    id_pemasok = {$idPemasok}, 
-    stok = {$stok}, 
-    satuan = '{$satuan}', 
-    harga_beli = {$hargaBeli}, 
-    harga_jual = {$hargaJual}, 
-    deskripsi = '{$deskripsi}'
-    WHERE id = {$idEditProduk}";
-    mysqli_query($conn, $sql);
-    unset($_SESSION['idEditProduk']);
-    header("Location: " . $_SERVER['REQUEST_URI']);
-    exit;
+    $idEditProduk = (int) $_POST['idEditProduk'];
+    $namaBarang = mysqli_real_escape_string($conn, $_POST['namaProduk']);
+    $idKategori = (int) $_POST['kategoriProduk'];
+
+    // Validasi dan konversi untuk stok, harga_beli, harga_jual di bagian edit juga
+    $stok = isset($_POST['stokProduk']) && $_POST['stokProduk'] !== '' ? (int) $_POST['stokProduk'] : 0;
+    $satuan = mysqli_real_escape_string($conn, $_POST['satuanProduk']);
+    $hargaBeli = isset($_POST['hargaBeliProduk']) && $_POST['hargaBeliProduk'] !== '' ? (int) $_POST['hargaBeliProduk'] : 0;
+    $hargaJual = isset($_POST['hargaJualProduk']) && $_POST['hargaJualProduk'] !== '' ? (int) $_POST['hargaJualProduk'] : 0;
+    $deskripsi = mysqli_real_escape_string($conn, $_POST['deskripsiProduk']);
+
+    // ... (rest of the UPDATE code, which should use prepared statements)
+    $updateSql = "UPDATE barang SET
+        nama_barang = ?,
+        id_kategori = ?,
+        stok = ?,
+        satuan = ?,
+        harga_beli = ?,
+        harga_jual = ?,
+        deskripsi = ?
+        WHERE id = ? AND id_pemasok = ?";
+    $stmt = mysqli_prepare($conn, $updateSql);
+    // Perhatikan 'i' untuk integer, 's' untuk string
+    mysqli_stmt_bind_param($stmt, "siisiissi", $namaBarang, $idKategori, $stok, $satuan, $hargaBeli, $hargaJual, $deskripsi, $idEditProduk, $idPemasok);
+
+    if (mysqli_stmt_execute($stmt)) {
+        header("Location: my_products.php?status=updated");
+        exit;
+    } else {
+        die("Gagal update produk: " . mysqli_error($conn));
+    }
 }
 
+// Hapus Produk
 if (isset($_POST['hapusProduk'])) {
-    $sqlHapusData = "DELETE FROM barang WHERE id = {$_POST['idEditProduk']}";
-    mysqli_query($conn, $sqlHapusData);
-    header("Location: " . $_SERVER['REQUEST_URI']);
-    exit;
+    $idHapus = (int) $_POST['idHapusProduk']; // Ganti nama input hidden
+    
+    // Menggunakan Prepared Statements untuk DELETE
+    $deleteSql = "DELETE FROM barang WHERE id = ? AND id_pemasok = ?";
+    $stmt = mysqli_prepare($conn, $deleteSql);
+    mysqli_stmt_bind_param($stmt, "ii", $idHapus, $idPemasok);
+
+    if (mysqli_stmt_execute($stmt)) {
+        // Redirect setelah sukses untuk mencegah form re-submission
+        header("Location: my_products.php?status=deleted");
+        exit;
+    } else {
+        die("Gagal hapus produk: " . mysqli_error($conn));
+    }
 }
+
+
+// Ambil Data Barang
+// Menggunakan Prepared Statements untuk SELECT
+$sql = "SELECT 
+    b.id,
+    b.nama_barang,
+    k.nama_kategori,
+    b.id_kategori,
+    b.stok,
+    b.satuan,
+    b.harga_jual,
+    b.harga_beli,
+    b.deskripsi
+    FROM barang b
+    JOIN kategori k ON b.id_kategori = k.id
+    WHERE b.id_pemasok = ? AND b.nama_barang LIKE ?
+    ORDER BY b.id DESC";
+
+$stmt = mysqli_prepare($conn, $sql);
+$paramCari = "%" . $cari . "%"; // Tambahkan wildcard untuk LIKE
+mysqli_stmt_bind_param($stmt, "is", $idPemasok, $paramCari);
+mysqli_stmt_execute($stmt);
+$dataBarang = mysqli_stmt_get_result($stmt);
+
+// Handle flash messages
+$flashMessage = '';
+$flashMessageType = '';
+if (isset($_GET['status'])) {
+    if ($_GET['status'] === 'added') {
+        $flashMessage = 'Produk berhasil ditambahkan!';
+        $flashMessageType = 'success';
+    } elseif ($_GET['status'] === 'updated') {
+        $flashMessage = 'Produk berhasil diperbarui!';
+        $flashMessageType = 'success';
+    } elseif ($_GET['status'] === 'deleted') {
+        $flashMessage = 'Produk berhasil dihapus!';
+        $flashMessageType = 'success';
+    }
+    // Hapus parameter status dari URL untuk mencegah pesan muncul lagi setelah refresh
+    // header("Location: my_products.php"); // Ini akan menghapus flash message jika tidak ditangani dengan JS
+    // exit;
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -80,6 +201,12 @@ if (isset($_POST['hapusProduk'])) {
 </head>
 
 <body class="flex flex-col min-h-screen font-sans bg-gray-100">
+
+    <?php
+    // var_dump($dataBarang); // Hapus ini setelah debugging
+    // var_dump($_SESSION);  // Hapus ini setelah debugging
+    ?>
+
     <nav class="p-4 text-white bg-green-700 shadow-md">
         <div class="container flex items-center justify-between mx-auto">
             <a href="dashboard.php" class="text-2xl font-bold">Pemasok Dashboard</a>
@@ -87,7 +214,7 @@ if (isset($_POST['hapusProduk'])) {
                 <a href="dashboard.php" class="hover:text-green-200">Beranda</a>
                 <a href="my_products.php" class="font-semibold hover:text-green-200">Produk Saya</a>
                 <a href="orders.php" class="hover:text-green-200">Pesanan</a>
-                <a href="../../logout.php" class="px-3 py-1 transition duration-300 bg-red-600 rounded-md hover:bg-red-700" onclick="logoutClientSide(event)">Logout</a>
+                <a href="../../logout.php" class="px-3 py-1 transition duration-300 bg-red-600 rounded-md hover:bg-red-700">Logout</a>
             </div>
         </div>
     </nav>
@@ -104,21 +231,36 @@ if (isset($_POST['hapusProduk'])) {
 
             <div class="mb-4">
                 <form action="" method="post">
-                    <input type="text" name="keyCari" id="searchInput" placeholder="Cari nama produk..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 md:w-1/3">
+                    <input type="text" name="keyCari" id="searchInput" placeholder="Cari nama produk..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 md:w-1/3" value="<?= htmlspecialchars($cari) ?>">
                     <button type="submit" class="hidden" name="cari"></button>
                 </form>
             </div>
 
-            <div id="flashMessage" class="relative hidden px-4 py-3 mb-4 text-green-700 bg-green-100 border border-green-400 rounded" role="alert">
-                <span id="flashMessageText" class="block sm:inline"></span>
-                <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="this.parentElement.classList.add('hidden')">
-                    <svg class="w-6 h-6 text-green-500 fill-current" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+            <div id="flashMessage" class="relative px-4 py-3 mb-4 rounded 
+                <?php 
+                    if (!empty($flashMessage)) { 
+                        echo 'flex'; // Show if message exists
+                        if ($flashMessageType === 'success') {
+                            echo ' text-green-700 bg-green-100 border border-green-400';
+                        } elseif ($flashMessageType === 'error') {
+                            echo ' text-red-700 bg-red-100 border border-red-400';
+                        }
+                    } else {
+                        echo ' hidden'; // Hide if no message
+                    }
+                ?>" role="alert">
+                <span id="flashMessageText" class="block sm:inline"><?= htmlspecialchars($flashMessage) ?></span>
+                <span class="absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer" onclick="this.parentElement.classList.add('hidden'); window.history.replaceState({}, document.title, window.location.pathname);">
+                    <svg class="w-6 h-6 fill-current 
+                        <?php 
+                            if ($flashMessageType === 'success') echo 'text-green-500'; 
+                            elseif ($flashMessageType === 'error') echo 'text-red-500'; 
+                        ?>" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                         <title>Close</title>
                         <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.697l-2.651 2.652a1.2 1.2 0 1 1-1.697-1.697L8.303 10 5.651 7.348a1.2 1.2 0 1 1 1.697-1.697L10 8.303l2.651-2.652a1.2 1.2 0 1 1 1.697 1.697L11.697 10l2.651 2.651a1.2 1.2 0 0 1 0 1.698z" />
                     </svg>
                 </span>
             </div>
-
 
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
@@ -129,53 +271,49 @@ if (isset($_POST['hapusProduk'])) {
                             <th class="px-6 py-3 text-left">Kategori</th>
                             <th class="px-6 py-3 text-center">Stok Tersedia</th>
                             <th class="px-6 py-3 text-right">Harga Satuan</th>
-                            <th class="px-6 py-3 text-right">Deskripsi</th>
+                            <th class="px-6 py-3 text-left">Deskripsi</th>
                             <th class="px-6 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm font-light text-gray-600" id="productTableBody">
-                        <?php if (empty($dataBarang)) { ?>
+                        <?php if (mysqli_num_rows($dataBarang) == 0) { ?>
                             <tr>
-                                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
                                     Produk tidak ditemukan.
                                 </td>
                             </tr>
-                        <?php } else { foreach($dataBarang as $indeks=>$barang) {?>
-                            <tr class="border-b border-gray-200 hover:bg-gray-100">
-                                <td class="px-6 py-3 text-left whitespace-nowrap"><?=$indeks + 1?></td>
-                                <td class="px-6 py-3 text-left"><?=$barang['nama_barang']?></td>
-                                <td class="px-6 py-3 text-left"><?=getKategori($barang['id_kategori'], $conn)?></td>
-                                <td class="px-6 py-3 text-center"><?=$barang['stok']?></td>
-                                <td class="px-6 py-3 text-right"><?=formatRupiah($barang['harga_jual'])?></td>
-                                <td class="px-6 py-3 text-right"><?=$barang['deskripsi']?></td>
-                                <td class="px-6 py-3 text-center">
-                                    <div class="flex justify-center space-x-2 item-center">
-                                        <form action="" method="post">
-                                            <input type="hidden" name="idEditProduk" value="<?=$barang['id']?>">
-                                            <input type="hidden" name="namaEditProduk" value="<?=$barang['nama_barang']?>">
-                                            <input type="hidden" name="kategoriEditProduk" value="<?=$barang['id_kategori']?>">
-                                            <input type="hidden" name="stokEditProduk" value="<?=$barang['stok']?>">
-                                            <input type="hidden" name="satuanEditProduk" value="<?=$barang['satuan']?>">
-                                            <input type="hidden" name="hargaBeliEditProduk" value="<?=$barang['harga_beli']?>">
-                                            <input type="hidden" name="hargaJualEditProduk" value="<?=$barang['harga_jual']?>">
-                                            <input type="hidden" name="deskripsiEditProduk" value="<?=$barang['deskripsi']?>">
-                                            <button type="submit" name="editProduk" class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Edit">
+                        <?php } else {
+                            $no = 1;
+                            while ($barang = mysqli_fetch_assoc($dataBarang)) { ?>
+                                <tr class="border-b border-gray-200 hover:bg-gray-100">
+                                    <td class="px-6 py-3 text-left whitespace-nowrap"><?= $no++ ?></td>
+                                    <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_barang']) ?></td>
+                                    <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_kategori']) ?></td>
+                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok']) ?></td>
+                                    <td class="px-6 py-3 text-right"><?= formatRupiah($barang['harga_jual']) ?></td>
+                                    <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['deskripsi']) ?></td>
+                                    <td class="px-6 py-3 text-center">
+                                        <div class="flex justify-center space-x-2 item-center">
+                                            <a href="?action=edit&id=<?= htmlspecialchars($barang['id']) ?>" class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Edit">
                                                 ✏️
-                                            </button>
-                                            <button type="submit" name="hapusProduk" class="w-6 h-6 transform hover:text-red-500 hover:scale-110" title="Hapus">
-                                                🗑️
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php }} ?>
+                                            </a>
+                                            <form action="" method="post" onsubmit="return confirm('Anda yakin ingin menghapus produk ini?');">
+                                                <input type="hidden" name="idHapusProduk" value="<?= htmlspecialchars($barang['id']) ?>">
+                                                <button type="submit" name="hapusProduk" class="w-6 h-6 transform hover:text-red-500 hover:scale-110" title="Hapus">
+                                                    🗑️
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                        <?php }
+                        } ?>
                     </tbody>
                 </table>
             </div>
 
             <div class="flex justify-center mt-6 space-x-2" id="paginationContainer">
-            </div>
+                </div>
 
         </div>
     </main>
@@ -188,459 +326,154 @@ if (isset($_POST['hapusProduk'])) {
 
     <div id="productModal" class="fixed inset-0 items-center justify-center hidden bg-gray-600 bg-opacity-50">
         <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
-            <h3 id="modalTitle" class="mb-4 text-2xl font-bold">Tambah Produk Baru</h3>
+            <h3 id="modalTitleAdd" class="mb-4 text-2xl font-bold">Tambah Produk Baru</h3>
             <form action="" method="post">
-                <input type="hidden" id="productId" name="id">
                 <div class="mb-4">
-                    <label for="productName" class="block mb-2 text-sm font-bold text-gray-700">Nama Produk:</label>
-                    <input type="text" id="productName" name="namaProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
+                    <label for="productNameAdd" class="block mb-2 text-sm font-bold text-gray-700">Nama Produk:</label>
+                    <input type="text" id="productNameAdd" name="namaProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
                 </div>
                 <div class="mb-4">
-                    <label for="productCategory" class="block mb-2 text-sm font-bold text-gray-700">Kategori:</label>
-                    <select id="productCategory" name="kategoriProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
-                        <option value="">Pilih Kategori</option>
-                        <option value="Elektronik">Elektronik</option>
-                        <option value="Pakaian">Pakaian</option>
-                        <option value="Makanan">Makanan</option>
-                        <option value="Minuman">Minuman</option>
-                        <option value="Perlengkapan Rumah">Perlengkapan Rumah</option>
+                    <label for="productCategoryAdd" class="block mb-2 text-sm font-bold text-gray-700">Kategori:</label>
+                    <select id="productCategoryAdd" name="kategoriProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
+                        <?php foreach ($list_kategori as $cat): ?>
+                        <option value="<?php echo htmlspecialchars($cat['id']); ?>"><?php echo htmlspecialchars($cat['nama_kategori']); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label for="productStock" class="block mb-2 text-sm font-bold text-gray-700">Stok Tersedia:</label>
-                    <input type="number" id="productStock" name="stokProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
+                    <label for="productStockAdd" class="block mb-2 text-sm font-bold text-gray-700">Stok Tersedia:</label>
+                    <input type="number" id="productStockAdd" name="stokProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
                 </div>
                 <div class="mb-4">
-                    <label for="satuan" class="block mb-2 text-sm font-bold text-gray-700">Satuan:</label>
-                    <input type="text" id="satuan" name="satuanProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="satuanAdd" class="block mb-2 text-sm font-bold text-gray-700">Satuan:</label>
+                    <input type="text" id="satuanAdd" name="satuanProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
                 </div>
                 <div class="mb-4">
-                    <label for="hargaBeli" class="block mb-2 text-sm font-bold text-gray-700">Harga Beli (Rp):</label>
-                    <input type="number" id="hargaBeli" name="hargaBeliProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="hargaBeliAdd" class="block mb-2 text-sm font-bold text-gray-700">Harga Beli (Rp):</label>
+                    <input type="number" id="hargaBeliAdd" name="hargaBeliProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
                 </div>
                 <div class="mb-4">
-                    <label for="hargaJual" class="block mb-2 text-sm font-bold text-gray-700">Harga Jual (Rp):</label>
-                    <input type="number" id="hargaJual" name="hargaJualProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="hargaJualAdd" class="block mb-2 text-sm font-bold text-gray-700">Harga Jual (Rp):</label>
+                    <input type="number" id="hargaJualAdd" name="hargaJualProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
                 </div>
                 <div class="mb-4">
-                    <label for="productDesc" class="block mb-2 text-sm font-bold text-gray-700">Deskripsi Produk:</label>
-                    <input type="text" id="productDesc" name="deskripsiProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="productDescAdd" class="block mb-2 text-sm font-bold text-gray-700">Deskripsi Produk:</label>
+                    <textarea type="text" id="productDescAdd" name="deskripsiProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required rows="3"></textarea>
                 </div>
                 <div class="flex justify-end space-x-4">
-                    <button type="button" id="cancelModalBtn" class="px-4 py-2 text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Batal</button>
+                    <button type="button" id="cancelModalBtnAdd" class="px-4 py-2 text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Batal</button>
                     <button type="submit" name="tambahProduk" class="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="editProduk" class="fixed inset-0 items-center justify-center <?=$editVisible?'flex':'hidden'?> bg-gray-600 bg-opacity-50">
+    <div id="editProdukModal" class="fixed inset-0 items-center justify-center <?= $isEditMode ? 'flex' : 'hidden' ?> bg-gray-600 bg-opacity-50">
         <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
-            <h3 id="modalTitle" class="mb-4 text-2xl font-bold">Edit Produk</h3>
+            <h3 id="modalTitleEdit" class="mb-4 text-2xl font-bold">Edit Produk</h3>
             <form action="" method="post">
-                <input type="hidden" id="idProduk" name="idEditProduk" value="<?=$_POST['idEditProduk']?>">
+                <input type="hidden" name="idEditProduk" value="<?= htmlspecialchars($editData['id'] ?? '') ?>">
+                
                 <div class="mb-4">
-                    <label for="productName" class="block mb-2 text-sm font-bold text-gray-700">Nama Produk:</label>
-                    <input type="text" id="productName" name="namaProduk" value="<?=$_POST['namaEditProduk']?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
+                    <label for="namaProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Nama Produk:</label>
+                    <input type="text" id="namaProdukEdit" name="namaProduk" value="<?= htmlspecialchars($editData['nama_barang'] ?? '') ?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
                 </div>
                 <div class="mb-4">
-                    <label for="kategoriProduk" class="block mb-2 text-sm font-bold text-gray-700">Kategori:</label>
-                    <select id="kategoriProduk" name="kategoriProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
-                        <option value="<?=getKategori($_POST['kategoriEditProduk'], $conn)?>"><?=getKategori($_POST['kategoriEditProduk'], $conn)?></option>
-                        <option value="Elektronik">Elektronik</option>
-                        <option value="Pakaian">Pakaian</option>
-                        <option value="Makanan">Makanan</option>
-                        <option value="Minuman">Minuman</option>
-                        <option value="Perlengkapan Rumah">Perlengkapan Rumah</option>
+                    <label for="kategoriProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Kategori:</label>
+                    <select id="kategoriProdukEdit" name="kategoriProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
+                        <?php foreach ($list_kategori as $cat): ?>
+                            <option value="<?php echo htmlspecialchars($cat['id']); ?>" 
+                                <?= (isset($editData['id_kategori']) && $editData['id_kategori'] == $cat['id']) ? 'selected' : '' ?>>
+                                <?php echo htmlspecialchars($cat['nama_kategori']); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label for="stokProduk" class="block mb-2 text-sm font-bold text-gray-700">Stok Tersedia:</label>
-                    <input type="number" id="stokProduk" name="stokProduk" value="<?=$_POST['stokEditProduk']?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
+                    <label for="stokProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Stok Tersedia:</label>
+                    <input type="number" id="stokProdukEdit" name="stokProduk" value="<?= htmlspecialchars($editData['stok'] ?? '') ?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
                 </div>
                 <div class="mb-4">
-                    <label for="satuanProduk" class="block mb-2 text-sm font-bold text-gray-700">Satuan:</label>
-                    <input type="text" id="satuanProduk" name="satuanProduk" value="<?=$_POST['satuanEditProduk']?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="satuanProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Satuan:</label>
+                    <input type="text" id="satuanProdukEdit" name="satuanProduk" value="<?= htmlspecialchars($editData['satuan'] ?? '') ?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required>
                 </div>
                 <div class="mb-4">
-                    <label for="hargaBeliProduk" class="block mb-2 text-sm font-bold text-gray-700">Harga Beli (Rp):</label>
-                    <input type="number" id="hargaBeliProduk" name="hargaBeliProduk" value="<?=$_POST['hargaBeliEditProduk']?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="hargaBeliProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Harga Beli (Rp):</label>
+                    <input type="number" id="hargaBeliProdukEdit" name="hargaBeliProduk" value="<?= htmlspecialchars($editData['harga_beli'] ?? '') ?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
                 </div>
                 <div class="mb-4">
-                    <label for="hargaJualProduk" class="block mb-2 text-sm font-bold text-gray-700">Harga Jual (Rp):</label>
-                    <input type="number" id="hargaJualProduk" name="hargaJualProduk" value="<?=$_POST['hargaJualEditProduk']?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="hargaJualProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Harga Jual (Rp):</label>
+                    <input type="number" id="hargaJualProdukEdit" name="hargaJualProduk" value="<?= htmlspecialchars($editData['harga_jual'] ?? '') ?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required min="0">
                 </div>
                 <div class="mb-4">
-                    <label for="deskripsiProduk" class="block mb-2 text-sm font-bold text-gray-700">Deskripsi Produk:</label>
-                    <input type="text" id="deskripsiProduk" name="deskripsiProduk" value="<?=$_POST['deskripsiEditProduk']?>" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required step="0.01" min="0">
+                    <label for="deskripsiProdukEdit" class="block mb-2 text-sm font-bold text-gray-700">Deskripsi Produk:</label>
+                    <textarea type="text" id="deskripsiProdukEdit" name="deskripsiProduk" class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow appearance-none focus:outline-none focus:shadow-outline" required rows="3"><?= htmlspecialchars($editData['deskripsi'] ?? '') ?></textarea>
                 </div>
                 <div class="flex justify-end space-x-4">
-                    <button type="submit" onclick="cancelEditBtn()" class="px-4 py-2 text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Batal</button>
+                    <button type="button" id="cancelModalBtnEdit" class="px-4 py-2 text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Batal</button>
                     <button type="submit" name="editProdukBtn" class="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script>
-        // Fungsi logout client-side (tetap sama)
-        function logoutClientSide(event) {
-            event.preventDefault();
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userEmail');
-            // window.location.href = '../../logout.php';
-        }
 
-        // --- Variabel Global untuk Data Produk dan Paginasi ---
-        // let allProductsData = []; // Akan diisi saat DOMContentLoaded
-        // let filteredProducts = [];
-        // let currentPage = 1;
-        // const itemsPerPage = 5; // Sesuaikan jumlah produk per halaman
-        // const currentUserEmail = localStorage.getItem('userEmail');
+    <script>
+        // Hapus fungsi logoutClientSide(event) jika tidak digunakan lagi
+        // Cukup arahkan langsung ke '../../logout.php'
 
         // --- DOM Elements ---
-        // const productTableBody = document.getElementById('productTableBody');
-        // const searchInput = document.getElementById('searchInput');
-        // const paginationContainer = document.getElementById('paginationContainer');
         const addProductBtn = document.getElementById('addProductBtn');
         const productModal = document.getElementById('productModal');
-        const editProduk = document.getElementById('editProduk');
-        // const modalTitle = document.getElementById('modalTitle');
-        // const productForm = document.getElementById('productForm');
-        // const productIdInput = document.getElementById('productId');
-        // const productNameInput = document.getElementById('productName');
-        // const productCategoryInput = document.getElementById('productCategory');
-        // const productStockInput = document.getElementById('productStock');
-        // const productPriceInput = document.getElementById('productPrice');
-        const cancelModalBtn = document.getElementById('cancelModalBtn');
-        // const flashMessage = document.getElementById('flashMessage');
-        // const flashMessageText = document.getElementById('flashMessageText');
+        const cancelModalBtnAdd = document.getElementById('cancelModalBtnAdd'); // Tombol batal untuk modal tambah
+        
+        const editProdukModal = document.getElementById('editProdukModal'); // Modal edit
+        const cancelModalBtnEdit = document.getElementById('cancelModalBtnEdit'); // Tombol batal untuk modal edit
+        const flashMessage = document.getElementById('flashMessage');
 
-
-        // --- Fungsi Helper ---
-
-        // Fungsi untuk menampilkan pesan flash
-        // function showFlashMessage(message, type = 'success') {
-        //     flashMessageText.textContent = message;
-        //     flashMessage.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'border-green-400', 'border-red-400', 'text-green-700', 'text-red-700');
-        //     if (type === 'success') {
-        //         flashMessage.classList.add('bg-green-100', 'border-green-400', 'text-green-700');
-        //     } else {
-        //         flashMessage.classList.add('bg-red-100', 'border-red-400', 'text-red-700');
-        //     }
-        //     setTimeout(() => {
-        //         flashMessage.classList.add('hidden');
-        //     }, 5000); // Pesan akan hilang setelah 5 detik
-        // }
-
-        // Fungsi untuk memformat harga ke Rupiah
-        // function formatRupiah(amount) {
-        //     return new Intl.NumberFormat('id-ID', {
-        //         style: 'currency',
-        //         currency: 'IDR',
-        //         minimumFractionDigits: 0
-        //     }).format(amount);
-        // }
-
-        // Fungsi untuk merender produk ke tabel
-        // function renderProducts() {
-        //     productTableBody.innerHTML = ''; // Bersihkan tabel
-        //     const start = (currentPage - 1) * itemsPerPage;
-        //     const end = start + itemsPerPage;
-        //     const paginatedProducts = filteredProducts.slice(start, end);
-
-        //     if (paginatedProducts.length === 0) {
-        //         productTableBody.innerHTML = `
-        //             <tr>
-        //                 <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-        //                     ${searchInput.value.trim() !== '' ? 'Produk tidak ditemukan.' : 'Belum ada produk yang Anda sediakan.'}
-        //                 </td>
-        //             </tr>
-        //         `;
-        //         renderPagination(); // Render paginasi meskipun tidak ada data
-        //         return;
-        //     }
-
-        //     paginatedProducts.forEach(product => {
-        //         const row = `
-        //             <tr class="border-b border-gray-200 hover:bg-gray-100">
-        //                 <td class="px-6 py-3 text-left whitespace-nowrap">${product.id}</td>
-        //                 <td class="px-6 py-3 text-left">${product.name}</td>
-        //                 <td class="px-6 py-3 text-left">${product.category}</td>
-        //                 <td class="px-6 py-3 text-center">
-        //                     <span class="px-2 py-1 rounded-full text-xs font-semibold
-        //                         ${product.stock < 20 ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}
-        //                     ">${product.stock}</span>
-        //                 </td>
-        //                 <td class="px-6 py-3 text-right">${formatRupiah(product.price)}</td>
-        //                 <td class="px-6 py-3 text-center">
-        //                     <div class="flex justify-center space-x-2 item-center">
-        //                         <button onclick="editProduct(${product.id})" class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Edit">
-        //                             ✏️
-        //                         </button>
-        //                         <button onclick="deleteProduct(${product.id})" class="w-6 h-6 transform hover:text-red-500 hover:scale-110" title="Hapus">
-        //                             🗑️
-        //                         </button>
-        //                     </div>
-        //                 </td>
-        //             </tr>
-        //         `;
-        //         productTableBody.innerHTML += row;
-        //     });
-        //     renderPagination();
-        // }
-
-        // Fungsi untuk merender kontrol paginasi
-        // function renderPagination() {
-        //     paginationContainer.innerHTML = '';
-        //     const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-
-        //     if (totalPages <= 1 && searchInput.value.trim() === '') {
-        //         return; // Jangan tampilkan paginasi jika hanya ada 1 halaman dan tidak sedang mencari
-        //     }
-
-        //     const createPageLink = (page, text, isActive = false) => {
-        //         const link = document.createElement('a');
-        //         link.href = '#';
-        //         link.className = `px-4 py-2 border rounded-md hover:bg-gray-200 ${isActive ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'}`;
-        //         link.textContent = text;
-        //         link.onclick = (e) => {
-        //             e.preventDefault();
-        //             currentPage = page;
-        //             renderProducts();
-        //         };
-        //         return link;
-        //     };
-
-        //     // Previous button
-        //     if (currentPage > 1) {
-        //         paginationContainer.appendChild(createPageLink(currentPage - 1, 'Previous'));
-        //     }
-
-        //     // Page numbers
-        //     for (let i = 1; i <= totalPages; i++) {
-        //         paginationContainer.appendChild(createPageLink(i, i.toString(), i === currentPage));
-        //     }
-
-        //     // Next button
-        //     if (currentPage < totalPages) {
-        //         paginationContainer.appendChild(createPageLink(currentPage + 1, 'Next'));
-        //     }
-        // }
-
-        // Fungsi untuk menyaring produk berdasarkan input pencarian
-        // function filterProducts() {
-        //     const searchTerm = searchInput.value.toLowerCase();
-        //     filteredProducts = allProductsData.filter(product =>
-        //         product.name.toLowerCase().includes(searchTerm)
-        //     );
-        //     currentPage = 1; // Reset ke halaman pertama setelah pencarian
-        //     renderProducts();
-        // }
-
-        // --- Fungsi CRUD (Add, Edit, Delete) ---
-
-        // Fungsi untuk membuka modal tambah produk
+        // --- Fungsi untuk Modal Tambah Produk ---
         addProductBtn.addEventListener('click', () => {
-            modalTitle.textContent = 'Ajukan Produk Baru';
-            // productForm.reset(); // Bersihkan form
-            // productIdInput.value = ''; // Pastikan ID kosong untuk mode tambah
             productModal.classList.remove('hidden');
             productModal.classList.add('flex');
+            // Reset form jika perlu
+            document.getElementById('productNameAdd').value = '';
+            document.getElementById('productStockAdd').value = '';
+            document.getElementById('satuanAdd').value = '';
+            document.getElementById('hargaBeliAdd').value = '';
+            document.getElementById('hargaJualAdd').value = '';
+            document.getElementById('productDescAdd').value = '';
+            document.getElementById('productCategoryAdd').selectedIndex = 0; // Pilih opsi pertama
         });
 
-        // Fungsi untuk membuka modal edit produk
-        function editProdukFunc() {
-            editProduk.classList.add('flex');
-            editProduk.classList.remove('hidden');
-        }
-
-        // Fungsi untuk menangani submit form (tambah/edit)
-        // productForm.addEventListener('submit', (event) => {
-        //     event.preventDefault();
-
-        //     const id = productIdInput.value ? parseInt(productIdInput.value) : null;
-        //     const name = productNameInput.value.trim();
-        //     const category = productCategoryInput.value;
-        //     const stock = parseInt(productStockInput.value);
-        //     const price = parseFloat(productPriceInput.value);
-
-        //     if (!name || !category || isNaN(stock) || isNaN(price)) {
-        //         showFlashMessage("Semua field wajib diisi dengan format yang benar.", "error");
-        //         return;
-        //     }
-        //     if (stock < 0 || price < 0) {
-        //         showFlashMessage("Stok dan harga tidak boleh negatif.", "error");
-        //         return;
-        //     }
-
-        //     if (id) {
-        //         // Mode Edit
-        //         const index = allProductsData.findIndex(p => p.id === id);
-        //         if (index !== -1) {
-        //             allProductsData[index] = {
-        //                 ...allProductsData[index],
-        //                 name,
-        //                 category,
-        //                 stock,
-        //                 price
-        //             };
-        //             showFlashMessage(`Produk '${name}' berhasil diperbarui.`, "success");
-        //         }
-        //     } else {
-        //         // Mode Tambah
-        //         const newId = allProductsData.length > 0 ? Math.max(...allProductsData.map(p => p.id)) + 1 : 1;
-        //         const newProduct = {
-        //             id: newId,
-        //             name,
-        //             category,
-        //             supplierEmail: currentUserEmail, // Assign ke pemasok yang sedang login
-        //             stock,
-        //             price
-        //         };
-        //         allProductsData.push(newProduct);
-        //         showFlashMessage(`Produk '${name}' berhasil ditambahkan.`, "success");
-        //     }
-
-        //     // Perbarui data yang difilter dan render ulang
-        //     filterProducts();
-        //     productModal.classList.add('hidden'); // Tutup modal
-        // });
-
-        // Fungsi untuk menutup modal
-        cancelModalBtn.addEventListener('click', () => {
+        cancelModalBtnAdd.addEventListener('click', () => {
             productModal.classList.remove('flex');
             productModal.classList.add('hidden');
-            // productForm.reset();
         });
-        function cancelEditBtn() {
-            document.getElementById('editProduk').classList.add('hidden');
-            document.getElementById('editProduk').classList.remove('flex');
+
+        // --- Fungsi untuk Modal Edit Produk ---
+        // Ini akan dipicu oleh PHP saat halaman dimuat jika ada parameter GET untuk edit
+        // Karena modal edit ditampilkan berdasarkan kondisi PHP ($isEditMode),
+        // kita hanya perlu menangani tombol batalnya di JavaScript.
+        cancelModalBtnEdit.addEventListener('click', () => {
+            editProdukModal.classList.remove('flex');
+            editProdukModal.classList.add('hidden');
+            // Penting: Hapus parameter GET dari URL setelah membatalkan edit
+            window.history.replaceState({}, document.title, window.location.pathname);
+        });
+
+        // Tangani flash message (optional: bisa ditangani sepenuhnya di PHP juga)
+        // Jika Anda ingin flash message hilang setelah beberapa detik tanpa refresh,
+        // gunakan setTimeout di sini.
+        window.onload = function() {
+            if (flashMessage && !flashMessage.classList.contains('hidden')) {
+                setTimeout(() => {
+                    flashMessage.classList.add('hidden');
+                    // Hapus parameter GET 'status' dari URL setelah pesan ditampilkan
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }, 5000); // Pesan hilang setelah 5 detik
+            }
         };
 
-        // Fungsi untuk menghapus produk
-        function hapusProdukFunc(id) {
-            if (confirm('Anda yakin ingin menghapus produk ini?')) {
-                const initialLength = allProductsData.length;
-                allProductsData = allProductsData.filter(product => product.id !== id);
-
-                if (allProductsData.length < initialLength) {
-                    showFlashMessage("Produk berhasil dihapus.", "success");
-                } else {
-                    showFlashMessage("Gagal menghapus produk.", "error");
-                }
-                filterProducts(); // Perbarui tampilan setelah penghapusan
-            }
-        }
-
-        // --- Event Listeners ---
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     // Logika autentikasi sisi klien (tetap sama)
-        //     if (localStorage.getItem('userRole') !== 'pemasok') {
-        //         // window.location.href = '../../index.php'; // Kembali ke index.php di root
-        //     }
-
-        //     // Data produk dummy (hanya produk yang diasosiasikan dengan 'pemasok@example.com')
-        //     const initialAllProductsData = [{
-        //             id: 1,
-        //             name: 'Laptop Gaming X1',
-        //             category: 'Elektronik',
-        //             supplierEmail: 'ptabclobal@example.com',
-        //             stock: 15,
-        //             price: 15000000
-        //         },
-        //         {
-        //             id: 2,
-        //             name: 'Kemeja Pria Casual',
-        //             category: 'Pakaian',
-        //             supplierEmail: 'pemasok@example.com',
-        //             stock: 200,
-        //             price: 120000
-        //         },
-        //         {
-        //             id: 3,
-        //             name: 'Berliner Coklat',
-        //             category: 'Makanan',
-        //             supplierEmail: 'umkmdonut@example.com',
-        //             stock: 50,
-        //             price: 15000
-        //         },
-        //         {
-        //             id: 4,
-        //             name: 'Mouse Wireless A10',
-        //             category: 'Elektronik',
-        //             supplierEmail: 'ptabclobal@example.com',
-        //             stock: 75,
-        //             price: 180000
-        //         },
-        //         {
-        //             id: 5,
-        //             name: 'Celana Jeans Slim Fit',
-        //             category: 'Pakaian',
-        //             supplierEmail: 'pemasok@example.com',
-        //             stock: 150,
-        //             price: 250000
-        //         },
-        //         {
-        //             id: 6,
-        //             name: 'Air Mineral 600ml',
-        //             category: 'Minuman',
-        //             supplierEmail: 'pttirta@example.com',
-        //             stock: 300,
-        //             price: 3000
-        //         },
-        //         {
-        //             id: 7,
-        //             name: 'Kaos Oblong Unisex',
-        //             category: 'Pakaian',
-        //             supplierEmail: 'pemasok@example.com',
-        //             stock: 100,
-        //             price: 75000
-        //         },
-        //         {
-        //             id: 8,
-        //             name: 'Charger USB-C',
-        //             category: 'Elektronik',
-        //             supplierEmail: 'ptabclobal@example.com',
-        //             stock: 25,
-        //             price: 90000
-        //         },
-        //         {
-        //             id: 9,
-        //             name: 'Buku Resep Masakan',
-        //             category: 'Peralatan Dapur',
-        //             supplierEmail: 'umkmdonut@example.com',
-        //             stock: 10,
-        //             price: 50000
-        //         },
-        //         {
-        //             id: 10,
-        //             name: 'Sepatu Lari Sport',
-        //             category: 'Pakaian',
-        //             supplierEmail: 'pemasok@example.com',
-        //             stock: 40,
-        //             price: 450000
-        //         },
-        //         {
-        //             id: 11,
-        //             name: 'Kopi Bubuk Robusta',
-        //             category: 'Minuman',
-        //             supplierEmail: 'pttirta@example.com',
-        //             stock: 60,
-        //             price: 25000
-        //         },
-        //     ];
-
-        //     // Filter data dummy hanya untuk pemasok yang sedang login
-        //     allProductsData = initialAllProductsData.filter(product => product.supplierEmail === currentUserEmail);
-
-        //     // Inisialisasi tampilan
-        //     filterProducts(); // Akan memanggil renderProducts() dan renderPagination()
-        // });
-
-        // searchInput.addEventListener('keyup', filterProducts);
-        // Tambahkan event listener untuk tombol paginasi jika Anda ingin mengimplementasikan dengan tombol terpisah,
-        // namun fungsi renderPagination() sudah menangani click event pada link yang dibuatnya.
     </script>
 </body>
 

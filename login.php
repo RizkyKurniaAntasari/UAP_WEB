@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['role'] = $user['role'];
 
                 if ($_SESSION['role'] === 'pemasok') {
-                    redirect_views_pemasok('/dashboard.php');
+                    header("Location: views/pemasok/dashboard.php");
                 } else {
                     redirect_views_admin('/dashboard.php');
                 }
