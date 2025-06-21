@@ -1,3 +1,26 @@
+<?php
+include_once __DIR__ . '/../../src/db.php';
+
+$stmt = mysqli_prepare($conn, "SELECT COUNT(id) FROM barang");
+$stmt2 = mysqli_prepare($conn, "SELECT COUNT(id) FROM pemasok");
+
+if ($stmt === false) {
+    die("Error preparing statement: " . mysqli_error($conn));
+}
+
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+$row = mysqli_fetch_array($result); // Use mysqli_fetch_array to access by index
+$banyak_barang = $row[0];
+mysqli_stmt_close($stmt);
+
+mysqli_stmt_execute($stmt2);
+$result2 = mysqli_stmt_get_result($stmt2);
+$column = mysqli_fetch_array($result2);
+$banyak_pemasok= $column[0];
+mysqli_stmt_close($stmt2);
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -16,7 +39,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
                 <h3 class="text-xl font-semibold text-gray-700 mb-2">Daftar Barang</h3>
-                <p class="text-4xl font-bold text-blue-600">1200</p>
+                <p class="text-4xl font-bold text-blue-600"><?= $banyak_barang ?></p>
                 <p class="text-gray-500">unit tersedia</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
@@ -26,7 +49,7 @@
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
                 <h3 class="text-xl font-semibold text-gray-700 mb-2">Pemasok Terdaftar</h3>
-                <p class="text-4xl font-bold text-purple-600">15</p>
+                <p class="text-4xl font-bold text-purple-600"><?= $banyak_pemasok ?></p>
                 <p class="text-gray-500">pemasok aktif</p>
             </div>
         </div>
