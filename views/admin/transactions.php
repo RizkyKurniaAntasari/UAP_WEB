@@ -30,8 +30,18 @@ if ($conn) { // Check if $conn object exists and is connected
     error_log("Database connection failed in transactions controller.");
 }
 
-$stmt = "SELECT * FROM barang";
+$stmt = "SELECT id, nama_barang, stok FROM barang ORDER BY nama_barang ASC"; // Tambahkan ORDER BY
 $daftar_barang_result = $conn->query($stmt);
+
+// --- Tambahkan query untuk mengambil daftar pemasok ---
+$daftar_pemasok_result = null;
+$sql_pemasok = "SELECT id, kontak FROM pemasok ORDER BY kontak ASC"; // Asumsi ada kolom 'kontak'
+if ($conn) {
+    $daftar_pemasok_result = $conn->query($sql_pemasok);
+    if ($daftar_pemasok_result === false) {
+        error_log("SQL Error fetching suppliers: " . $conn->error);
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -167,16 +177,13 @@ $daftar_barang_result = $conn->query($stmt);
                     <select id="transactionBarangId" name="transactionBarangId" required class="w-full border border-gray-300 rounded-md px-3 py-2">
                         <option value="">-- Pilih Barang --</option>
                         <?php
-                        // Check if the query returned any rows
                         if ($daftar_barang_result && mysqli_num_rows($daftar_barang_result) > 0) {
                             while ($barang = mysqli_fetch_assoc($daftar_barang_result)) {
-                                // Output each option tag
                                 echo '<option value="' . htmlspecialchars($barang['id']) . '" data-stok="' . htmlspecialchars($barang['stok']) . '">'
                                     . htmlspecialchars($barang['nama_barang']) . ' (Stok: ' . htmlspecialchars($barang['stok']) . ')'
                                     . '</option>';
                             }
                         } else {
-                            // Optional: Show a message if no items are found
                             echo '<option value="" disabled>Tidak ada barang tersedia</option>';
                         }
                         ?>
@@ -202,10 +209,27 @@ $daftar_barang_result = $conn->query($stmt);
                     <input type="text" id="predictedStock" class="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100" readonly value="0">
                 </div>
 
+                <input type="hidden" id="currentStock" name="currentStock">
 
-                <div id="pemasokField" class="hidden"> <label for="transactionPemasokId" class="block text-sm font-medium text-gray-700">Pemasok</label>
+
+                <div id="pemasokField" class="hidden">
+                    <label for="transactionPemasokId" class="block text-sm font-medium text-gray-700">Pemasok</label>
                     <select id="transactionPemasokId" name="transactionPemasokId" class="w-full border border-gray-300 rounded-md px-3 py-2">
                         <option value="">-- Pilih Pemasok (Opsional) --</option>
+                        <?php
+                        // Mengisi dropdown pemasok dari data yang sudah diambil di awal file
+                        if ($daftar_pemasok_result && $daftar_pemasok_result->num_rows > 0) {
+                            // Reset pointer result set agar bisa di-loop lagi jika sudah pernah di-loop sebelumnya
+                            $daftar_pemasok_result->data_seek(0);
+                            while ($pemasok = mysqli_fetch_assoc($daftar_pemasok_result)) {
+                                echo '<option value="' . htmlspecialchars($pemasok['id']) . '">'
+                                    . htmlspecialchars($pemasok['kontak'])
+                                    . '</option>';
+                            }
+                        } else {
+                            echo '<option value="" disabled>Tidak ada pemasok tersedia</option>';
+                        }
+                        ?>
                     </select>
                 </div>
 

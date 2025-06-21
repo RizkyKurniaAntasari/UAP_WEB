@@ -68,7 +68,6 @@ CREATE TABLE IF NOT EXISTS transaksi (
     barang_id INT NOT NULL,                     -- Kunci asing ke tabel `barang`
     jenis ENUM('masuk', 'keluar') NOT NULL,     -- 'masuk' untuk penambahan stok, 'keluar' untuk pengurangan stok
     kuantitas INT NOT NULL,                     -- Jumlah barang dalam transaksi ini
-    stok_sebelum INT NOT NULL,                  -- Stok barang SEBELUM transaksi ini dilakukan (untuk riwayat)
     stok_sesudah INT NOT NULL,                  -- Stok barang SETELAH transaksi ini dilakukan (ini akan sama dengan stok_akhir di aplikasi)
     pemasok_id INT,                             -- Kunci asing ke tabel `pemasok`.ID (opsional, untuk transaksi masuk)
                                                 -- Nama pemasok akan di-join dari tabel `pemasok` saat menampilkan data.
@@ -121,20 +120,20 @@ INSERT INTO barang (nama_barang, id_kategori, id_pemasok, stok, satuan, harga_be
 -- Karena FOREIGN KEY tidak dapat memvalidasi nilai numerik pada kolom lain.
 
 -- Transaksi Masuk: Laptop Gaming ABC
-INSERT INTO transaksi (barang_id, jenis, kuantitas, stok_sebelum, stok_sesudah, pemasok_id, catatan) VALUES
-((SELECT id FROM barang WHERE nama_barang = 'Laptop Gaming ABC'), 'masuk', 10, 15, 25, (SELECT id FROM pemasok WHERE perusahaan = 'PT Elektronik Maju'), 'Pembelian tambahan stok dari pemasok.');
+INSERT INTO transaksi (barang_id, jenis, kuantitas, stok_sesudah, pemasok_id, catatan) VALUES
+((SELECT id FROM barang WHERE nama_barang = 'Laptop Gaming ABC'), 'masuk', 10, 25, (SELECT id FROM pemasok WHERE perusahaan = 'PT Elektronik Maju'), 'Pembelian tambahan stok dari pemasok.');
 -- Update stok di tabel barang untuk mencerminkan transaksi ini
 UPDATE barang SET stok = 25 WHERE nama_barang = 'Laptop Gaming ABC';
 
 -- Transaksi Keluar: Kemeja Pria Casual
 INSERT INTO transaksi (barang_id, jenis, kuantitas, stok_sebelum, stok_sesudah, pemasok_id, catatan) VALUES
-((SELECT id FROM barang WHERE nama_barang = 'Kemeja Pria Casual'), 'keluar', 5, 50, 45, NULL, 'Penjualan ke pelanggan ritel.');
+((SELECT id FROM barang WHERE nama_barang = 'Kemeja Pria Casual'), 'keluar', 5, 45, NULL, 'Penjualan ke pelanggan ritel.');
 -- Update stok di tabel barang untuk mencerminkan transaksi ini
 UPDATE barang SET stok = 45 WHERE nama_barang = 'Kemeja Pria Casual';
 
 -- Transaksi Masuk: Beras Premium 5kg
 INSERT INTO transaksi (barang_id, jenis, kuantitas, stok_sebelum, stok_sesudah, pemasok_id, catatan) VALUES
-((SELECT id FROM barang WHERE nama_barang = 'Beras Premium 5kg'), 'masuk', 20, 100, 120, (SELECT id FROM pemasok WHERE perusahaan = 'CV Pangan Sehat'), 'Restock bulanan.');
+((SELECT id FROM barang WHERE nama_barang = 'Beras Premium 5kg'), 'masuk', 20, 120, (SELECT id FROM pemasok WHERE perusahaan = 'CV Pangan Sehat'), 'Restock bulanan.');
 -- Update stok di tabel barang untuk mencerminkan transaksi ini
 UPDATE barang SET stok = 120 WHERE nama_barang = 'Beras Premium 5kg';
 

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const transactionBarangId = document.getElementById('transactionBarangId');
     const transactionJenis = document.getElementById('transactionJenis');
     const transactionKuantitas = document.getElementById('transactionKuantitas');
-    const currentStock = document.getElementById('currentStock'); // Input untuk menampilkan stok saat ini
+    const currentStockHiddenInput = document.getElementById('currentStock'); // Ini adalah input hidden untuk menyimpan stok saat ini
     const predictedStock = document.getElementById('predictedStock'); // Input untuk menampilkan stok setelah transaksi
     const pemasokField = document.getElementById('pemasokField');
     const transactionPemasokId = document.getElementById('transactionPemasokId');
@@ -32,19 +32,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Jika ada barang yang tersedia:
             // 1. Set dropdown barang agar memilih barang pertama tersebut.
             transactionBarangId.value = firstActualOption.value;
-            // 2. Ambil nilai stok dari atribut data-stok dan isi ke input 'Stok Saat Ini'.
-            currentStock.value = parseInt(firstActualOption.dataset.stok || '0'); // Menggunakan parseInt dengan fallback '0' untuk keamanan
+            // 2. Ambil nilai stok dari atribut data-stok dan isi ke input hidden 'currentStockHiddenInput'.
+            currentStockHiddenInput.value = parseInt(firstActualOption.dataset.stok || '0'); // Menggunakan parseInt dengan fallback '0'
         } else {
             // Jika tidak ada barang sama sekali:
             // 1. Pastikan dropdown memilih opsi placeholder.
             transactionBarangId.value = '';
-            // 2. Set 'Stok Saat Ini' menjadi 0.
-            currentStock.value = '0';
+            // 2. Set 'currentStockHiddenInput' menjadi 0.
+            currentStockHiddenInput.value = '0';
         }
 
         predictedStock.value = '0'; // Stok Prediksi selalu dimulai dari 0
         pemasokField.classList.add('hidden'); // Sembunyikan field pemasok secara default
-        transactionPemasokId.removeAttribute('required'); // Pastikan pemasok tidak wajib diisi
+        transactionPemasokId.removeAttribute('required'); // Pastikan pemasok tidak wajib diisi secara default
         transactionPemasokId.value = ''; // Kosongkan pilihan pemasok
 
         // Setelah semua nilai diatur, hitung stok prediksi awal
@@ -71,10 +71,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectedOption && selectedOption.value !== "") {
             // Jika opsi valid (bukan placeholder), ambil stoknya dari data-stok
             const stock = parseInt(selectedOption.dataset.stok || '0');
-            currentStock.value = stock; // Update input 'Stok Saat Ini'
+            currentStockHiddenInput.value = stock; // Update input hidden 'currentStockHiddenInput'
         } else {
-            // Jika placeholder dipilih kembali, set 'Stok Saat Ini' ke 0
-            currentStock.value = '0';
+            // Jika placeholder dipilih kembali, set 'currentStockHiddenInput' ke 0
+            currentStockHiddenInput.value = '0';
         }
         calculatePredictedStock(); // Hitung ulang stok prediksi
     });
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Fungsi untuk Menghitung Stok Prediksi ---
     function calculatePredictedStock() {
-        const currentStockValue = parseInt(currentStock.value); // Ambil stok saat ini dari input
+        const currentStockValue = parseInt(currentStockHiddenInput.value); // Ambil stok saat ini dari input hidden
         const quantity = parseInt(transactionKuantitas.value || '0'); // Ambil kuantitas, default 0 jika kosong/invalid
         const transactionType = transactionJenis.value; // Ambil jenis transaksi
 
@@ -132,22 +132,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         if (transactionJenis.value === 'keluar' && parseInt(predictedStock.value) < 0) {
-            alert("Stok tidak cukup untuk transaksi keluar ini. Stok tersedia: " + currentStock.value);
+            alert("Stok tidak cukup untuk transaksi keluar ini. Stok tersedia: " + currentStockHiddenInput.value); // Gunakan currentStockHiddenInput
             return;
         }
         if (transactionJenis.value === 'masuk' && pemasokField.classList.contains('hidden') === false && transactionPemasokId.value === "") {
-             alert("Pemasok wajib diisi untuk transaksi masuk.");
-             return;
+            alert("Pemasok wajib diisi untuk transaksi masuk.");
+            return;
         }
 
         // Kumpulkan data form
         const formData = new FormData(this);
         // Tambahkan nilai stok saat ini dan stok prediksi ke FormData untuk validasi backend atau logging
-        formData.append('current_stock_at_transaction', currentStock.value);
+        formData.append('current_stock_at_transaction', currentStockHiddenInput.value); // Kirim stok saat ini dari input hidden
         formData.append('predicted_stock_after_transaction', predictedStock.value);
 
         // Kirim data menggunakan Fetch API
-        fetch('process_transaction.php', {
+        fetch('../api/process_transaction.php', {
             method: 'POST',
             body: formData
         })
@@ -178,9 +178,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const rows = Array.from(transactionTableBody.getElementsByTagName('tr'));
         const selectedType = transactionTypeFilter.value.toLowerCase();
         const startDate = startDateFilter.value ? new Date(startDateFilter.value + 'T00:00:00') : null;
+        // Perbaikan: endDateFilter harus mencakup seluruh hari.
+        // Jika endDateFilter.value ada, kita buat objek Date sampai akhir hari (23:59:59).
         const endDate = endDateFilter.value ? new Date(endDateFilter.value + 'T23:59:59') : null;
 
         let anyDataRowVisible = false;
+        let noDataRowCurrentlyVisible = false; // Flag untuk melacak status baris "Tidak ada data"
 
         rows.forEach(row => {
             const isNoDataRow = row.querySelector('td[colspan="9"]') !== null;
@@ -191,11 +194,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const typeCell = row.children[3].textContent.trim().toLowerCase();
-            const dateParts = row.children[1].textContent.trim().split(' ')[0].split('-');
-            const transactionDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T00:00:00`);
+            // Parsing tanggal dari format 'DD-MM-YYYY HH:MM' ke Date object
+            const dateParts = row.children[1].textContent.trim().split(' ')[0].split('-'); // Ambil 'DD-MM-YYYY'
+            const transactionDate = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T00:00:00`); // 'YYYY-MM-DD'
 
             const typeMatch = selectedType === '' || typeCell.includes(selectedType);
-            const dateMatch = (!startDate || transactionDate >= startDate) && (!endDate || transactionDate >= endDate); // Changed to >= for endDate to include the whole day
+            const dateMatch = (!startDate || transactionDate >= startDate) && (!endDate || transactionDate <= endDate); // Perbaiki kondisi endDate
 
             if (typeMatch && dateMatch) {
                 row.style.display = '';
@@ -209,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (noDataRowElement) {
             if (!anyDataRowVisible) {
                 noDataRowElement.closest('tr').style.display = ''; // Tampilkan "tidak ada data" jika tidak ada baris lain
+                noDataRowCurrentlyVisible = true;
             } else {
                 noDataRowElement.closest('tr').style.display = 'none'; // Sembunyikan jika ada baris data yang terlihat
             }
@@ -229,7 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Ambil semua baris data yang saat ini terlihat (sudah difilter)
         const allRows = Array.from(transactionTableBody.getElementsByTagName('tr'));
         const currentlyFilteredDataRows = allRows.filter(row =>
-            row.style.display !== 'none' && row.querySelector('td[colspan="9"]') === null
+            row.style.display !== 'none' && row.querySelector('td[colspan="9"]') === null // Pastikan hanya baris data yang difilter dan terlihat
         );
 
         const totalPages = Math.ceil(currentlyFilteredDataRows.length / itemsPerPage);
@@ -237,11 +242,10 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationContainer.innerHTML = ''; // Hapus tombol yang sudah ada
 
         // Jika hanya ada 1 halaman atau tidak ada data, sembunyikan pagination
-        if (totalPages <= 1 && currentlyFilteredDataRows.length > 0) {
-            currentlyFilteredDataRows.forEach(row => row.style.display = ''); // Pastikan semua data terlihat
+        if (totalPages <= 1) { // Total pages <= 1 berarti tidak perlu pagination
+             // Pastikan semua baris data yang difilter terlihat jika tidak ada pagination
+            currentlyFilteredDataRows.forEach(row => row.style.display = '');
             return;
-        } else if (currentlyFilteredDataRows.length === 0) {
-            return; // Tidak perlu pagination jika tidak ada data sama sekali
         }
 
         // Sesuaikan currentPage jika di luar batas setelah filtering
@@ -310,18 +314,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const start = (page - 1) * itemsPerPage;
         const end = start + itemsPerPage;
 
-        allRows.forEach((row) => {
-            const isDataRow = row.querySelector('td[colspan="9"]') === null;
-            if (isDataRow) {
-                const originalIndexInFilteredRows = currentlyFilteredDataRows.indexOf(row);
-                if (originalIndexInFilteredRows >= start && originalIndexInFilteredRows < end) {
-                    row.style.display = ''; // Tampilkan untuk halaman saat ini
-                } else {
-                    row.style.display = 'none'; // Sembunyikan karena pagination
-                }
+        currentlyFilteredDataRows.forEach((row, index) => { // Loop hanya pada baris data yang difilter
+            if (index >= start && index < end) {
+                row.style.display = ''; // Tampilkan untuk halaman saat ini
+            } else {
+                row.style.display = 'none'; // Sembunyikan karena pagination
             }
-            // Baris "tidak ada data" dikelola oleh `applyFilters()`
         });
+
+        // Tangani baris "tidak ada data" secara terpisah setelah pagination
+        const noDataRowElement = transactionTableBody.querySelector('td[colspan="9"]');
+        if (noDataRowElement) {
+             if (currentlyFilteredDataRows.length === 0) {
+                 noDataRowElement.closest('tr').style.display = ''; // Tampilkan jika tidak ada data yang difilter sama sekali
+             } else {
+                 noDataRowElement.closest('tr').style.display = 'none'; // Sembunyikan jika ada data
+             }
+        }
     }
 
     // --- Panggilan Inisialisasi Awal ---
