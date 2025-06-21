@@ -17,6 +17,10 @@ function redirect_views_pemasok($url) {
     exit;
 }
 
+function redirect_from_controllers($url){
+    header("Location: ../../views/admin" . $url);
+}
+
 function hash_password($password) {
     return password_hash($password, PASSWORD_DEFAULT);
 }

@@ -1,24 +1,39 @@
 <?php
-require_once __DIR__ . '/../../controllers/admin/transactions.php';
-$all_transactions = $conn->query("
-  SELECT
-    t.id                   AS id_transaksi,
-    t.tanggal,
-    t.barang_id,       
-    b.nama_barang,
-    t.jenis,
-    t.kuantitas,
-    t.stok_sesudah         AS stok_akhir,
-    t.pemasok_id,      
-    p.kontak               AS nama_pemasok,
-    t.catatan
-  FROM transaksi t
-  JOIN barang b   ON t.barang_id  = b.id
-  LEFT JOIN pemasok p ON t.pemasok_id = p.id
-  ORDER BY t.tanggal DESC
-");
+require_once __DIR__ . '/../../src/db.php';
 
+$all_transactions = null;
+
+$sql = "
+    SELECT
+        t.id AS id_transaksi,
+        t.tanggal,
+        t.barang_id,
+        b.nama_barang,
+        t.jenis,
+        t.kuantitas,
+        t.stok_sesudah AS stok_akhir,
+        t.pemasok_id,
+        p.kontak AS nama_pemasok,
+        t.catatan
+    FROM transaksi t
+    JOIN barang b ON t.barang_id = b.id
+    LEFT JOIN pemasok p ON t.pemasok_id = p.id
+    ORDER BY t.tanggal DESC
+";
+if ($conn) { // Check if $conn object exists and is connected
+    $all_transactions = $conn->query($sql);
+
+    if ($all_transactions === false) {
+        error_log("SQL Error fetching transactions: " . $conn->error);
+    }
+} else {
+    error_log("Database connection failed in transactions controller.");
+}
+
+$stmt = "SELECT * FROM barang";
+$daftar_barang_result = $conn->query($stmt);
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 
@@ -93,7 +108,7 @@ $all_transactions = $conn->query("
                                     </td>
                                     <td class="py-3 px-6 text-center">
                                         <span class="px-3 py-1 rounded-full text-xs font-semibold
-                        <?= ($transaction['jenis'] === 'masuk') ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800' ?>">
+                                        <?= ($transaction['jenis'] === 'masuk') ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800' ?>">
                                             <?= htmlspecialchars(ucfirst($transaction['jenis'])) ?>
                                         </span>
                                     </td>
@@ -112,16 +127,13 @@ $all_transactions = $conn->query("
                                         <?= htmlspecialchars($transaction['catatan']) ?>
                                     </td>
                                     <td class="py-3 px-6 text-center space-x-2">
-                            
-                                        <!-- Tombol Hapus -->
-                                        <a
-                                            href="?hapus=<?= $transaction['id_transaksi'] ?>"
-                                            onclick="return confirm('Yakin ingin menghapus transaksi ini?');"
+                                        <a href="../../controllers/admin/hapus_transaksi.php?id=<?= $transaction['id_transaksi'] ?>"
+                                            onclick="return confirm('Yakin ingin menghapus transaksi ini? Ini akan mengembalikan stok.');"
                                             class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">
                                             Hapus
                                         </a>
-                                    </td>
 
+                                    </td>
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
@@ -132,7 +144,6 @@ $all_transactions = $conn->query("
                             </tr>
                         <?php endif; ?>
                     </tbody>
-
                 </table>
             </div>
 
@@ -145,7 +156,6 @@ $all_transactions = $conn->query("
 
     <?php include_once 'components/footer.php'; ?>
 
-    <!-- Modal -->
     <div id="transactionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg w-[90%] max-w-md">
             <h2 id="modalTitle" class="text-xl font-bold mb-4">Tambah Transaksi</h2>
@@ -154,7 +164,23 @@ $all_transactions = $conn->query("
 
                 <div>
                     <label for="transactionBarangId" class="block text-sm font-medium text-gray-700">Barang</label>
-                    <input type="text" id="transactionBarangId" name="transactionBarangId" required class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="ID atau nama barang...">
+                    <select id="transactionBarangId" name="transactionBarangId" required class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">-- Pilih Barang --</option>
+                        <?php
+                        // Check if the query returned any rows
+                        if ($daftar_barang_result && mysqli_num_rows($daftar_barang_result) > 0) {
+                            while ($barang = mysqli_fetch_assoc($daftar_barang_result)) {
+                                // Output each option tag
+                                echo '<option value="' . htmlspecialchars($barang['id']) . '" data-stok="' . htmlspecialchars($barang['stok']) . '">'
+                                    . htmlspecialchars($barang['nama_barang']) . ' (Stok: ' . htmlspecialchars($barang['stok']) . ')'
+                                    . '</option>';
+                            }
+                        } else {
+                            // Optional: Show a message if no items are found
+                            echo '<option value="" disabled>Tidak ada barang tersedia</option>';
+                        }
+                        ?>
+                    </select>
                 </div>
 
                 <div>
@@ -172,8 +198,15 @@ $all_transactions = $conn->query("
                 </div>
 
                 <div>
-                    <label for="transactionPemasokId" class="block text-sm font-medium text-gray-700">Pemasok</label>
-                    <input type="text" id="transactionPemasokId" name="transactionPemasokId" class="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Nama atau ID Pemasok (jika ada)">
+                    <label for="predictedStock" class="block text-sm font-medium text-gray-700">Stok Setelah Transaksi</label>
+                    <input type="text" id="predictedStock" class="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100" readonly value="0">
+                </div>
+
+
+                <div id="pemasokField" class="hidden"> <label for="transactionPemasokId" class="block text-sm font-medium text-gray-700">Pemasok</label>
+                    <select id="transactionPemasokId" name="transactionPemasokId" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                        <option value="">-- Pilih Pemasok (Opsional) --</option>
+                    </select>
                 </div>
 
                 <div>
@@ -191,7 +224,6 @@ $all_transactions = $conn->query("
 
 
     <script src="js/transaction.js"></script>
-
 </body>
 
 </html>
