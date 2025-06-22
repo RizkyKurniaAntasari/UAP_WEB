@@ -1,18 +1,58 @@
 <?php
 session_start();
+// Pastikan path ke db.php sudah benar, relatif dari lokasi file ini
 include '../../src/db.php';
 
-if (isset($_SESSION['loggedin'])) {
-    $nama = $_SESSION['nama'];
-    $id = $_SESSION['id'];
-    // echo "<script>alert('{$_SESSION['id']}')</script>";
+$nama = "Tamu";
+$jumlahProduk = 0;
+$pesananBaru = 0;
+
+// Flag untuk status login
+$isLoggedIn = false;
+
+// Periksa status login
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    $isLoggedIn = true; // Set flag menjadi true karena pengguna login
     
-    $sql = "SELECT * FROM barang WHERE id_pemasok = '$id'";
-    $dataBarang = mysqli_query($conn, $sql);
+    // Jika login, baru ambil data dari session dan database
+    if (isset($_SESSION['nama'])) {
+        $nama = htmlspecialchars($_SESSION['nama']); // Sanitasi dan gunakan nama dari session
+    }
     
-    $jumlahProduk = $dataBarang->num_rows;
-    $pesananBaru = 5;
+    if (isset($_SESSION['id']) && $conn) { // Pastikan $conn ada sebelum query database
+        $id = $_SESSION['id']; // ID pemasok
+        var_dump($id);
+        // Ambil jumlah produk yang terkait dengan pemasok ini
+        $stmt_produk = $conn->prepare("SELECT COUNT(*) AS jumlah_produk FROM barang WHERE id_pemasok = ?");
+        if ($stmt_produk) {
+            $stmt_produk->bind_param("i", $id);
+            $stmt_produk->execute();
+            $result_produk = $stmt_produk->get_result();
+            $row_produk = $result_produk->fetch_assoc();
+            $jumlahProduk = $row_produk['jumlah_produk'];
+            $stmt_produk->close();
+        } else {
+            // Log error jika prepared statement gagal
+            error_log("Prepare statement failed for counting products: " . $conn->error);
+        }
+        
+        // --- Contoh untuk pesanan baru ---
+        // Jika Anda memiliki tabel 'pesanan' dan ingin menghitung pesanan baru:
+        // Misalnya: SELECT COUNT(*) FROM pesanan WHERE id_pemasok = ? AND status = 'baru'
+        // Anda akan memerlukan prepared statement serupa di sini
+        
+        // Untuk saat ini, ini tetap hardcoded jika Anda belum punya tabel pesanan yang terintegrasi
+        $pesananBaru = 5; // <--- Sesuaikan ini jika Anda sudah punya logika database untuk pesanan
+        
+    } elseif (!isset($_SESSION['id'])) {
+        // Log jika session ID tidak ada padahal loggedin true (kasus aneh, tapi bagus untuk debug)
+        error_log("User logged in but " . $_SESSION['id'] . " is not set.");
+    }
     
+} else {
+    // Pengguna TIDAK login. Variabel $nama, $jumlahProduk, $pesananBaru
+    // sudah diinisialisasi di atas dengan nilai default ("Tamu", 0, 0).
+    // Jadi tidak perlu set ulang di sini.
 }
 ?>
 
@@ -24,7 +64,8 @@ if (isset($_SESSION['loggedin'])) {
     <title>Dashboard Pemasok - Sistem Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="flex flex-col min-h-screen font-sans bg-gray-100"> <nav class="p-4 text-white bg-green-700 shadow-md">
+<body class="flex flex-col min-h-screen font-sans bg-gray-100">
+    <nav class="p-4 text-white bg-green-700 shadow-md">
         <div class="container flex items-center justify-between mx-auto">
             <a href="dashboard.php" class="text-2xl font-bold">Pemasok Dashboard</a>
             <div class="flex space-x-4">
@@ -36,7 +77,8 @@ if (isset($_SESSION['loggedin'])) {
         </div>
     </nav>
 
-    <main class="container flex-grow px-6 py-8 mx-auto"> <h1 class="mb-6 text-4xl font-bold text-gray-800">Selamat Datang, <?=$nama?>!</h1>
+    <main class="container flex-grow px-6 py-8 mx-auto">
+        <h1 class="mb-6 text-4xl font-bold text-gray-800">Selamat Datang, <?= $nama ?>!</h1>
         <p class="mb-8 text-gray-700">Di sini Anda dapat melihat informasi terkait produk yang Anda sediakan dan status pesanan.</p>
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -61,9 +103,24 @@ if (isset($_SESSION['loggedin'])) {
         </div>
     </main>
 
-    <footer class="py-4 mt-8 text-center text-white bg-gray-800"> <div class="container px-6 mx-auto">
+    <footer class="py-4 mt-8 text-center text-white bg-gray-800">
+        <div class="container px-6 mx-auto">
             <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
         </div>
     </footer>
+
+    <script>
+        <?php if (!$isLoggedIn): ?>
+            alert("Anda belum login. Silakan login terlebih dahulu.");
+            // window.location.href = '../../login.php'; 
+        <?php endif; ?>
+
+        function logoutClientSide(event) {
+            // Ini adalah placeholder, logout sebenarnya akan ditangani oleh logout.php
+            console.log("Logging out...");
+            // event.preventDefault(); 
+            // window.location.href = '../../logout.php'; 
+        }
+    </script>
 </body>
 </html>
