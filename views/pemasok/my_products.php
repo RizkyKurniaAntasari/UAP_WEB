@@ -156,21 +156,54 @@ $sql = "SELECT
     b.nama_barang,
     k.nama_kategori,
     b.id_kategori,
-    b.stok,
+    b.stok AS stok_barang,
     b.satuan,
     b.harga_jual,
     b.harga_beli,
-    b.deskripsi
-    FROM barang b
-    JOIN kategori k ON b.id_kategori = k.id
-    WHERE b.id_pemasok = ? AND b.nama_barang LIKE ?
-    ORDER BY b.id DESC";
+    b.deskripsi,
+    (
+        SELECT t.stok_sesudah 
+        FROM transaksi t
+        WHERE t.barang_id = b.id
+        ORDER BY t.id DESC
+        LIMIT 1
+    ) AS stok_terakhir_transaksi
+FROM 
+    barang b
+JOIN 
+    kategori k ON b.id_kategori = k.id
+WHERE 
+    b.id_pemasok = ? AND b.nama_barang LIKE ?
+ORDER BY 
+    b.id DESC";
+
 
 $stmt = mysqli_prepare($conn, $sql);
 $paramCari = "%" . $cari . "%"; // Tambahkan wildcard untuk LIKE
 mysqli_stmt_bind_param($stmt, "is", $idPemasok, $paramCari);
 mysqli_stmt_execute($stmt);
 $dataBarang = mysqli_stmt_get_result($stmt);
+
+$stoks = "SELECT 
+    transaksi.stok_sesudah,
+    transaksi.id AS transaksi_id,
+    pemasok.kontak,
+    barang.nama_barang
+FROM 
+    transaksi
+JOIN 
+    pemasok ON transaksi.pemasok_id = pemasok.id
+JOIN 
+    barang ON barang.id_pemasok = pemasok.id
+WHERE 
+    pemasok.id = $idPemasok;
+";
+// If you choose this, ensure $idPemasok is absolutely safe (e.g., cast to int)
+// For example: $idPemasok = (int)$_SESSION['id_pemasok'];
+$stmt1 = mysqli_prepare($conn, $stoks);
+// No mysqli_stmt_bind_param needed here
+mysqli_stmt_execute($stmt1);
+$dataStoks = mysqli_stmt_get_result($stmt1);
 
 // Handle flash messages
 $flashMessage = '';
@@ -268,6 +301,7 @@ if (isset($_GET['status'])) {
                             <th class="px-6 py-3 text-left">Nama Barang</th>
                             <th class="px-6 py-3 text-left">Kategori</th>
                             <th class="px-6 py-3 text-center">Stok Tersedia</th>
+                            <th class="px-6 py-3 text-center">Stok Akhir</th>
                             <th class="px-6 py-3 text-right">Harga Satuan</th>
                             <th class="px-6 py-3 text-left">Deskripsi</th>
                             <th class="px-6 py-3 text-center">Aksi</th>
@@ -282,12 +316,13 @@ if (isset($_GET['status'])) {
                             </tr>
                         <?php } else {
                             $no = 1;
-                            while ($barang = mysqli_fetch_assoc($dataBarang)) { ?>
+                            while ($barang = mysqli_fetch_assoc($dataBarang) ) { ?>
                                 <tr class="border-b border-gray-200 hover:bg-gray-100">
                                     <td class="px-6 py-3 text-left whitespace-nowrap"><?= $no++ ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_barang']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_kategori']) ?></td>
-                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok']) ?></td>
+                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok_barang']) ?></td>
+                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok_terakhir_transaksi'] ?? '0') ?></td> 
                                     <td class="px-6 py-3 text-right"><?= formatRupiah($barang['harga_jual']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['deskripsi']) ?></td>
                                     <td class="px-6 py-3 text-center">
