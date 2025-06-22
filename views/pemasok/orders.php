@@ -1,3 +1,19 @@
+<?php
+session_start();
+include '../../src/db.php';
+include '../../src/functions.php';
+
+$cariJenis = isset($_POST['cariPesanan'])?$_POST['inputJenis']:"";
+$cariNama = isset($_POST['cariPesanan'])?$_POST['inputNama']:"";
+$dataIdBarang = getIdBarang($cariNama, $conn);
+$arrayIdBarang = [0];
+foreach($dataIdBarang as $barang) {
+    $arrayIdBarang[] = $barang['id'];
+}
+$listIdBarang = implode(",", $arrayIdBarang);
+$dataTransaksi = mysqli_query($conn, "SELECT * FROM transaksi WHERE pemasok_id = {$_SESSION['id']} AND jenis LIKE '%{$cariJenis}%' AND barang_id IN ($listIdBarang)");
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -31,50 +47,69 @@
 
     <main class="container flex-grow px-6 py-8 mx-auto">
         <h1 class="mb-6 text-4xl font-bold text-gray-800">Daftar Pesanan</h1>
-        <p class="mb-8 text-gray-700">Lihat pesanan yang melibatkan produk Anda dan statusnya.</p>
+        <p class="mb-8 text-gray-700">Lihat pesanan yang melibatkan produk Anda dan jenisnya.</p>
 
         <div class="p-6 mb-8 bg-white rounded-lg shadow-md">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-2xl font-semibold text-gray-800">Pesanan Masuk</h2>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
+            <form action="" method="post" class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
                 <div>
-                    <label for="orderStatus" class="block mb-1 text-sm font-semibold text-gray-700">Status Pesanan:</label>
-                    <select id="orderStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <option value="">Semua Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="diproses">Diproses</option>
-                        <option value="dikirim">Dikirim</option>
-                        <option value="selesai">Selesai</option>
-                        <option value="dibatalkan">Dibatalkan</option>
+                    <label for="inputJenis" class="block mb-1 text-sm font-semibold text-gray-700">Jenis Pesanan:</label>
+                    <select name="inputJenis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <option value="">Semua Jenis</option>
+                        <option value="masuk">Barang Masuk</option>
+                        <option value="keluar">Barang Keluar</option>
                     </select>
                 </div>
                 <div>
-                    <label for="orderSearch" class="block mb-1 text-sm font-semibold text-gray-700">Cari Pesanan:</label>
-                    <input type="text" id="orderSearch" placeholder="Cari ID/Nama Produk..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <label for="inputNama" class="block mb-1 text-sm font-semibold text-gray-700">Cari Pesanan:</label>
+                    <input type="text" name="inputNama" placeholder="Cari Nama Produk..." class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
                 </div>
                 <div class="text-right md:col-span-2">
-                    <button id="filterOrdersBtn" class="px-4 py-2 text-white transition duration-300 bg-indigo-600 rounded-md hover:bg-indigo-700">Filter Pesanan</button>
-                    <button id="resetFilterBtn" class="hidden px-4 py-2 ml-2 text-white transition duration-300 bg-gray-400 rounded-md hover:bg-gray-500">Reset Filter</button>
+                    <button type="submit" name="cariPesanan" class="px-4 py-2 text-white transition duration-300 bg-indigo-600 rounded-md hover:bg-indigo-700">Cari Pesanan</button>
                 </div>
-            </div>
+            </form>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
                     <thead>
                         <tr class="text-sm leading-normal text-gray-700 uppercase bg-gray-200">
-                            <th class="px-6 py-3 text-left">ID Pesanan</th>
+                            <th class="px-6 py-3 text-left">No</th>
                             <th class="px-6 py-3 text-left">Tanggal Pesanan</th>
                             <th class="px-6 py-3 text-left">Nama Produk</th>
-                            <th class="px-6 py-3 text-center">Kuantitas</th>
+                            <th class="px-6 py-3 text-center">Jenis</th>
+                            <th class="px-6 py-3 text-right">Kuantitas</th>
                             <th class="px-6 py-3 text-right">Total Harga</th>
-                            <th class="px-6 py-3 text-center">Status</th>
-                            <th class="px-6 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="text-sm font-light text-gray-600" id="orderTableBody">
-                        </tbody>
+                    <tbody class="text-sm font-light text-gray-600">
+                        <?php
+                        if (count($arrayIdBarang) > 1) {
+                        $i = 1;
+                        while($data = mysqli_fetch_assoc($dataTransaksi)) { 
+                        ?>
+                        <tr class="border-b border-gray-200 hover:bg-gray-100">
+                            <td class="px-6 py-3 text-left whitespace-nowrap"><?=$i?></td>
+                            <td class="px-6 py-3 text-left"><?=$data['tanggal']?></td>
+                            <td class="px-6 py-3 text-left"><?=getNamaBarang($data['barang_id'], $conn)?></td>
+                            <td class="px-6 py-3 text-center"><?=$data['jenis']?></td>
+                            <td class="px-6 py-3 text-right"><?=$data['kuantitas']?></td>
+                            <td class="px-6 py-3 text-right"><?=formatRupiah(getHargaBarang($data['barang_id'], $data['jenis'], $conn))?></td>
+                        </tr>
+                        <?php
+                        $i++; }} else {
+                        ?>
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                Pesanan tidak ditemukan.
+                            </td>
+                        </tr>
+                        <?php
+                        }
+                        ?>
+                    </tbody>
                 </table>
             </div>
 
@@ -90,7 +125,7 @@
         </div>
     </footer>
 
-    <div id="detailModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
+    <!-- <div id="detailModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
         <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-xl modal-content">
             <h3 class="mb-6 text-2xl font-bold text-gray-800">Detail Pesanan</h3>
             <div class="space-y-4 text-gray-700">
@@ -106,9 +141,9 @@
                 <button onclick="closeDetailModal()" class="px-6 py-2 font-semibold text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Tutup</button>
             </div>
         </div>
-    </div>
+    </div> -->
 
-    <div id="statusModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
+    <!-- <div id="statusModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
         <div class="w-full max-w-sm p-8 bg-white rounded-lg shadow-xl modal-content">
             <h3 class="mb-6 text-2xl font-bold text-gray-800">Ubah Status Pesanan <span id="statusModalOrderId" class="text-indigo-600"></span></h3>
             <div class="mb-4">
@@ -126,7 +161,7 @@
                 <button id="saveStatusBtn" class="px-6 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">Simpan</button>
             </div>
         </div>
-    </div>
+    </div> -->
 
 
     <script>

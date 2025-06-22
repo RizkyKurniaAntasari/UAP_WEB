@@ -159,11 +159,11 @@ if (isset($_POST['hapusProduk'])) {
                                             <input type="hidden" name="hargaBeliEditProduk" value="<?=$barang['harga_beli']?>">
                                             <input type="hidden" name="hargaJualEditProduk" value="<?=$barang['harga_jual']?>">
                                             <input type="hidden" name="deskripsiEditProduk" value="<?=$barang['deskripsi']?>">
-                                            <button type="submit" name="editProduk" class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Edit">
-                                                ✏️
+                                            <button type="submit" name="editProduk" class="w-6 h-6 me-2 transform text-left text-blue-500 hover:scale-110" title="Edit">
+                                                Edit
                                             </button>
-                                            <button type="submit" name="hapusProduk" class="w-6 h-6 transform hover:text-red-500 hover:scale-110" title="Hapus">
-                                                🗑️
+                                            <button type="submit" name="hapusProduk" onclick="return confirm('Apakah Anda yakin ingin menghapus produk ini?')" class="w-6 h-6 ms-2 transform text-right text-red-500 hover:scale-110" title="Hapus">
+                                                Hapus
                                             </button>
                                         </form>
                                     </div>
@@ -201,9 +201,8 @@ if (isset($_POST['hapusProduk'])) {
                         <option value="">Pilih Kategori</option>
                         <option value="Elektronik">Elektronik</option>
                         <option value="Pakaian">Pakaian</option>
-                        <option value="Makanan">Makanan</option>
-                        <option value="Minuman">Minuman</option>
-                        <option value="Perlengkapan Rumah">Perlengkapan Rumah</option>
+                        <option value="Makanan & Minuman">Makanan & Minuman</option>
+                        <option value="Peralatan Rumah Tangga">Peralatan Rumah Tangga</option>
                     </select>
                 </div>
                 <div class="mb-4">
@@ -249,9 +248,8 @@ if (isset($_POST['hapusProduk'])) {
                         <option value="<?=getKategori($_POST['kategoriEditProduk'], $conn)?>"><?=getKategori($_POST['kategoriEditProduk'], $conn)?></option>
                         <option value="Elektronik">Elektronik</option>
                         <option value="Pakaian">Pakaian</option>
-                        <option value="Makanan">Makanan</option>
-                        <option value="Minuman">Minuman</option>
-                        <option value="Perlengkapan Rumah">Perlengkapan Rumah</option>
+                        <option value="Makanan & Minuman">Makanan & Minuman</option>
+                        <option value="Peralatan Rumah Tangga">Peralatan Rumah Tangga</option>
                     </select>
                 </div>
                 <div class="mb-4">

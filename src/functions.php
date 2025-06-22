@@ -32,6 +32,43 @@ function getKategori($id_kategori, $conn) {
     }
 }
 
+function getNamaBarang($idBarang, $conn) {
+    $sql = "SELECT nama_barang FROM barang WHERE id = '$idBarang'";
+    $result = mysqli_query($conn, $sql);
+    if ($result && $row = mysqli_fetch_assoc($result)) {
+        $namaBarang = $row['nama_barang'];
+        return $namaBarang;
+    } else {
+        return "Barang tidak ditemukan.";
+    }
+}
+
+function getHargaBarang($idBarang, $jenis, $conn) {
+    $sql = "";
+    if ($jenis == "masuk") {
+        $sql = "SELECT harga_beli FROM barang WHERE id = '$idBarang'";
+        $result = mysqli_query($conn, $sql);
+        if ($result && $row = mysqli_fetch_assoc($result)) {
+            $hargaBarang = $row['harga_beli'];
+            return $hargaBarang;
+        } else {
+            return "Barang tidak ditemukan.";
+        }
+    } else if ($jenis == "keluar") {
+        $sql = "SELECT harga_jual FROM barang WHERE id = '$idBarang'";
+        $result = mysqli_query($conn, $sql);
+        if ($result && $row = mysqli_fetch_assoc($result)) {
+            $hargaBarang = $row['harga_jual'];
+            return $hargaBarang;
+        } else {
+            return "Barang tidak ditemukan.";
+        }
+    } else {
+        return "Jenis tidak ditemukan.";
+    }
+    
+}
+
 function getIdKategori($kategori, $conn) {
     $sql = "SELECT id FROM kategori WHERE nama_kategori = '$kategori'";
     $result = mysqli_query($conn, $sql);
@@ -43,7 +80,13 @@ function getIdKategori($kategori, $conn) {
     }
 }
 
+function getIdBarang($namaBarang, $conn) {
+    $sql = "SELECT id FROM barang WHERE nama_barang LIKE '%{$namaBarang}%'";
+    $idBarang = mysqli_query($conn, $sql);
+    return $idBarang;
+}
+
 function formatRupiah(int $angka): string {
-    return 'Rp ' . number_format($angka, 0, ',', '.');
+    return 'Rp ' . number_format($angka, 2, ',', '.');
 }
 ?>
