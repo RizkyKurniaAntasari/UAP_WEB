@@ -1,37 +1,91 @@
 <?php
 session_start();
-include '../../src/db.php';
-include '../../src/functions.php';
+include_once __DIR__ . '/../../src/db.php';
 
-$cariJenis = isset($_POST['cariPesanan'])?$_POST['inputJenis']:"";
-$cariNama = isset($_POST['cariPesanan'])?$_POST['inputNama']:"";
-$dataIdBarang = getIdBarang($cariNama, $conn);
-$arrayIdBarang = [0];
-foreach($dataIdBarang as $barang) {
-    $arrayIdBarang[] = $barang['id'];
+// Validasi login user
+// This block ensures only logged-in users proceed.
+if (!isset($_SESSION['nama']) || !isset($_SESSION['email'])) {
+    header("Location: ../../login.php");
+    exit;
 }
-$listIdBarang = implode(",", $arrayIdBarang);
-$dataTransaksi = mysqli_query($conn, "SELECT * FROM transaksi WHERE pemasok_id = {$_SESSION['id']} AND jenis LIKE '%{$cariJenis}%' AND barang_id IN ($listIdBarang)");
+
+$nama = $_SESSION['nama'];
+$email = $_SESSION['email'];
+
+// Ambil ID Pemasok
+$getPemasok = mysqli_prepare($conn, "SELECT id FROM pemasok WHERE kontak = ? AND email = ?");
+if (!$getPemasok) {
+    // Handle prepare statement error
+    error_log("Failed to prepare statement for fetching supplier ID: " . mysqli_error($conn));
+    header("Location: dashboard.php?error=db_error"); // Redirect to dashboard with an error
+    exit;
+}
+mysqli_stmt_bind_param($getPemasok, "ss", $nama, $email);
+mysqli_stmt_execute($getPemasok);
+$resultPemasok = mysqli_stmt_get_result($getPemasok);
+
+$idPemasok = null;
+if ($row = mysqli_fetch_assoc($resultPemasok)) {
+    $idPemasok = $row['id'];
+} else {
+    // If no supplier ID is found for the logged-in user,
+    // it implies an inconsistency or that the user isn't a supplier.
+    // Redirect them to their dashboard or login, with a message.
+    header("Location: dashboard.php?message=supplier_not_found");
+    exit; // Crucial: Stop script execution after redirect
+}
+
+// Close the prepared statement for getPemasok
+mysqli_stmt_close($getPemasok);
+
+// Query transaksi dan barang
+$sql = "SELECT
+            t.id, t.tanggal, t.kuantitas, t.jenis,
+            b.nama_barang, b.harga_jual, b.harga_beli
+        FROM transaksi t
+        JOIN barang b ON t.barang_id = b.id
+        WHERE b.id_pemasok = ?";
+
+$stmt = mysqli_prepare($conn, $sql);
+if (!$stmt) {
+    // Handle prepare statement error for transactions
+    error_log("Failed to prepare statement for fetching transactions: " . mysqli_error($conn));
+    header("Location: dashboard.php?error=db_query_failed"); // Redirect with an error
+    exit;
+}
+mysqli_stmt_bind_param($stmt, "i", $idPemasok);
+mysqli_stmt_execute($stmt);
+$dataBarang = mysqli_stmt_get_result($stmt);
+
+// Close the prepared statement for transactions
+mysqli_stmt_close($stmt);
+
+// Don't forget to close the database connection when done
+mysqli_close($conn);
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pesanan Saya - Pemasok Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../assets/css/style.css">
     <style>
         /* Gaya tambahan untuk modal */
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
+
         .modal-content {
             z-index: 1000;
         }
     </style>
 </head>
+
 <body class="flex flex-col min-h-screen font-sans bg-gray-100">
     <nav class="p-4 text-white bg-green-700 shadow-md">
         <div class="container flex items-center justify-between mx-auto">
@@ -76,45 +130,66 @@ $dataTransaksi = mysqli_query($conn, "SELECT * FROM transaksi WHERE pemasok_id =
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
                     <thead>
                         <tr class="text-sm leading-normal text-gray-700 uppercase bg-gray-200">
-                            <th class="px-6 py-3 text-left">No</th>
-                            <th class="px-6 py-3 text-left">Tanggal Pesanan</th>
-                            <th class="px-6 py-3 text-left">Nama Produk</th>
+                            <th class="px-6 py-3 text-left">ID Pesanan</th>
+                            <th class="px-6 py-3 text-left">Tanggal</th>
+                            <th class="px-6 py-3 text-left">Nama Barang</th>
+                            <th class="px-6 py-3 text-center">Kuantitas</th>
+                            <th class="px-6 py-3 text-right text-red-700">Total Keluar</th>
+                            <th class="px-6 py-3 text-right text-green-700">Total Masuk</th>
                             <th class="px-6 py-3 text-center">Jenis</th>
-                            <th class="px-6 py-3 text-right">Kuantitas</th>
-                            <th class="px-6 py-3 text-right">Total Harga</th>
+                            <th class="px-6 py-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="text-sm font-light text-gray-600">
-                        <?php
-                        if (count($arrayIdBarang) > 1) {
-                        $i = 1;
-                        while($data = mysqli_fetch_assoc($dataTransaksi)) { 
-                        ?>
-                        <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="px-6 py-3 text-left whitespace-nowrap"><?=$i?></td>
-                            <td class="px-6 py-3 text-left"><?=$data['tanggal']?></td>
-                            <td class="px-6 py-3 text-left"><?=getNamaBarang($data['barang_id'], $conn)?></td>
-                            <td class="px-6 py-3 text-center"><?=$data['jenis']?></td>
-                            <td class="px-6 py-3 text-right"><?=$data['kuantitas']?></td>
-                            <td class="px-6 py-3 text-right"><?=formatRupiah(getHargaBarang($data['barang_id'], $data['jenis'], $conn))?></td>
-                        </tr>
-                        <?php
-                        $i++; }} else {
-                        ?>
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                Pesanan tidak ditemukan.
-                            </td>
-                        </tr>
-                        <?php
-                        }
-                        ?>
+                    <tbody class="text-sm font-light text-gray-600" id="orderTableBody">
+                        <?php if (mysqli_num_rows($dataBarang) > 0): ?>
+                            <?php while ($row = mysqli_fetch_assoc($dataBarang)): ?>
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="px-6 py-3 text-left"><?= htmlspecialchars($row['id']) ?></td>
+                                    <td class="px-6 py-3 text-left"><?= htmlspecialchars($row['tanggal']) ?></td>
+                                    <td class="px-6 py-3 text-left"><?= htmlspecialchars($row['nama_barang']) ?></td>
+                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($row['kuantitas']) ?></td>
+
+                                    <?php if ($row['jenis'] === 'keluar'): ?>
+                                        <!-- Barang Keluar -->
+                                        <td class="px-6 py-3 text-right text-red-700 font-semibold">
+                                            - Rp<?= number_format($row['kuantitas'] * $row['harga_jual']) ?>
+                                        </td>
+                                        <td class="px-6 py-3 text-right">-</td>
+                                    <?php elseif ($row['jenis'] === 'masuk'): ?>
+                                        <!-- Barang Masuk -->
+                                        <td class="px-6 py-3 text-right">-</td>
+                                        <td class="px-6 py-3 text-right text-green-700 font-semibold">
+                                            + Rp<?= number_format($row['kuantitas'] * $row['harga_beli']) ?>
+                                        </td>
+                                    <?php else: ?>
+                                        <td class="px-6 py-3 text-right">-</td>
+                                        <td class="px-6 py-3 text-right">-</td>
+                                    <?php endif; ?>
+
+                                    <td class="px-6 py-3 text-center">
+                                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
+                    <?= match ($row['jenis']) {
+                                    'keluar' => 'bg-red-100 text-red-800',
+                                    'masuk' => 'bg-green-100 text-green-800',
+                                    default => 'bg-gray-100 text-gray-800',
+                                } ?>">
+                                            <?= ucfirst($row['jenis']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-3 text-center text-sm text-gray-500 italic">-</td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">Tidak ada transaksi ditemukan.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <div class="flex justify-center mt-6 space-x-2" id="paginationContainer">
-                </div>
+            </div>
 
         </div>
     </main>
@@ -124,343 +199,6 @@ $dataTransaksi = mysqli_query($conn, "SELECT * FROM transaksi WHERE pemasok_id =
             <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
         </div>
     </footer>
-
-    <!-- <div id="detailModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
-        <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-xl modal-content">
-            <h3 class="mb-6 text-2xl font-bold text-gray-800">Detail Pesanan</h3>
-            <div class="space-y-4 text-gray-700">
-                <p><strong>ID Pesanan:</strong> <span id="detailOrderId"></span></p>
-                <p><strong>Tanggal Pesanan:</strong> <span id="detailOrderDate"></span></p>
-                <p><strong>Nama Produk:</strong> <span id="detailProductName"></span></p>
-                <p><strong>Kuantitas:</strong> <span id="detailQuantity"></span></p>
-                <p><strong>Total Harga:</strong> <span id="detailTotalPrice"></span></p>
-                <p><strong>Status:</strong> <span id="detailStatus" class="font-semibold"></span></p>
-                <p><strong>Pemasok Email:</strong> <span id="detailSupplierEmail"></span></p>
-            </div>
-            <div class="mt-8 text-right">
-                <button onclick="closeDetailModal()" class="px-6 py-2 font-semibold text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Tutup</button>
-            </div>
-        </div>
-    </div> -->
-
-    <!-- <div id="statusModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-600 bg-opacity-50 modal-overlay">
-        <div class="w-full max-w-sm p-8 bg-white rounded-lg shadow-xl modal-content">
-            <h3 class="mb-6 text-2xl font-bold text-gray-800">Ubah Status Pesanan <span id="statusModalOrderId" class="text-indigo-600"></span></h3>
-            <div class="mb-4">
-                <label for="newOrderStatus" class="block mb-2 text-sm font-bold text-gray-700">Pilih Status Baru:</label>
-                <select id="newOrderStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                    <option value="pending">Pending</option>
-                    <option value="diproses">Diproses</option>
-                    <option value="dikirim">Dikirim</option>
-                    <option value="selesai">Selesai</option>
-                    <option value="dibatalkan">Dibatalkan</option>
-                </select>
-            </div>
-            <div class="flex justify-end mt-8 space-x-4">
-                <button onclick="closeStatusModal()" class="px-6 py-2 font-semibold text-gray-800 bg-gray-300 rounded-md hover:bg-gray-400">Batal</button>
-                <button id="saveStatusBtn" class="px-6 py-2 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700">Simpan</button>
-            </div>
-        </div>
-    </div> -->
-
-
-    <script>
-        // Fungsi logout client-side (tetap sama)
-        function logoutClientSide(event) {
-            event.preventDefault();
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('userEmail');
-            window.location.href = '../../logout.php';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Logika autentikasi sisi klien
-            if (localStorage.getItem('userRole') !== 'pemasok') {
-                // window.location.href = '../../index.php';
-                return;
-            }
-
-            // Data pesanan dummy
-            const rawOrdersData = [
-                { id: 'ORD001', date: '2025-06-10', product: 'Kemeja Pria Casual', quantity: 2, price_per_unit: 120000, status: 'pending', supplierEmail: 'pemasok@example.com' },
-                { id: 'ORD002', date: '2025-06-09', product: 'Laptop Gaming X1', quantity: 1, price_per_unit: 15000000, status: 'diproses', supplierEmail: 'ptabclobal@example.com' },
-                { id: 'ORD003', date: '2025-06-08', product: 'Celana Jeans Slim Fit', quantity: 3, price_per_unit: 250000, status: 'dikirim', supplierEmail: 'pemasok@example.com' },
-                { id: 'ORD004', date: '2025-06-07', product: 'Berliner Coklat', quantity: 10, price_per_unit: 15000, status: 'selesai', supplierEmail: 'umkmdonut@example.com' },
-                { id: 'ORD005', date: '2025-06-06', product: 'Kemeja Pria Casual', quantity: 1, price_per_unit: 120000, status: 'dibatalkan', supplierEmail: 'pemasok@example.com' },
-                { id: 'ORD006', date: '2025-06-05', product: 'Mouse Wireless A10', quantity: 2, price_per_unit: 180000, status: 'pending', supplierEmail: 'ptabclobal@example.com' },
-                { id: 'ORD007', date: '2025-06-04', product: 'Celana Jeans Slim Fit', quantity: 1, price_per_unit: 250000, status: 'pending', supplierEmail: 'pemasok@example.com' },
-                { id: 'ORD008', date: '2025-06-03', product: 'Kopi Bubuk Robusta', quantity: 5, price_per_unit: 25000, status: 'selesai', supplierEmail: 'pttirta@example.com' },
-                { id: 'ORD009', date: '2025-06-02', product: 'Kemeja Pria Casual', quantity: 3, price_per_unit: 120000, status: 'diproses', supplierEmail: 'pemasok@example.com' },
-                { id: 'ORD010', date: '2025-06-01', product: 'Laptop Gaming X1', quantity: 1, price_per_unit: 15000000, status: 'dibatalkan', supplierEmail: 'ptabclobal@example.com' },
-            ];
-
-            const currentUserEmail = localStorage.getItem('userEmail');
-            let allOrdersForSupplier = rawOrdersData.filter(order => order.supplierEmail === currentUserEmail);
-            let filteredOrders = [...allOrdersForSupplier]; // Data yang akan ditampilkan setelah filter
-            let currentPage = 1;
-            const itemsPerPage = 5; // Jumlah item per halaman
-
-            // --- DOM Elements ---
-            const orderTableBody = document.getElementById('orderTableBody');
-            const orderStatusSelect = document.getElementById('orderStatus');
-            const orderSearchInput = document.getElementById('orderSearch');
-            const filterOrdersBtn = document.getElementById('filterOrdersBtn');
-            const resetFilterBtn = document.getElementById('resetFilterBtn');
-            const paginationContainer = document.getElementById('paginationContainer');
-
-            // Modal Detail
-            const detailModal = document.getElementById('detailModal');
-            const detailOrderId = document.getElementById('detailOrderId');
-            const detailOrderDate = document.getElementById('detailOrderDate');
-            const detailProductName = document.getElementById('detailProductName');
-            const detailQuantity = document.getElementById('detailQuantity');
-            const detailTotalPrice = document.getElementById('detailTotalPrice');
-            const detailStatus = document.getElementById('detailStatus');
-            const detailSupplierEmail = document.getElementById('detailSupplierEmail');
-
-            // Modal Status
-            const statusModal = document.getElementById('statusModal');
-            const statusModalOrderId = document.getElementById('statusModalOrderId');
-            const newOrderStatusSelect = document.getElementById('newOrderStatus');
-            const saveStatusBtn = document.getElementById('saveStatusBtn');
-            let currentOrderBeingEdited = null; // Untuk menyimpan referensi pesanan yang sedang diubah
-
-            // --- Fungsi Helper ---
-
-            // Fungsi untuk memformat harga ke Rupiah
-            function formatRupiah(amount) {
-                return new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                    minimumFractionDigits: 0
-                }).format(amount);
-            }
-
-            // Fungsi untuk merender pesanan ke tabel
-            function renderOrders() {
-                orderTableBody.innerHTML = ''; // Bersihkan tabel sebelum render ulang
-
-                const start = (currentPage - 1) * itemsPerPage;
-                const end = start + itemsPerPage;
-                const paginatedOrders = filteredOrders.slice(start, end);
-
-                if (paginatedOrders.length === 0) {
-                    orderTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">Tidak ada pesanan yang ditemukan.</td>
-                        </tr>
-                    `;
-                    renderPagination(); // Tetap render paginasi
-                    return;
-                }
-
-                paginatedOrders.forEach(order => {
-                    const total_price = order.quantity * order.price_per_unit;
-                    let statusColorClass = '';
-                    switch(order.status) {
-                        case 'pending': statusColorClass = 'bg-yellow-200 text-yellow-800'; break;
-                        case 'diproses': statusColorClass = 'bg-blue-200 text-blue-800'; break;
-                        case 'dikirim': statusColorClass = 'bg-purple-200 text-purple-800'; break;
-                        case 'selesai': statusColorClass = 'bg-green-200 text-green-800'; break;
-                        case 'dibatalkan': statusColorClass = 'bg-red-200 text-red-800'; break;
-                        default: statusColorClass = 'bg-gray-200 text-gray-800'; break;
-                    }
-
-                    const row = `
-                        <tr class="border-b border-gray-200 hover:bg-gray-100">
-                            <td class="px-6 py-3 text-left whitespace-nowrap">${order.id}</td>
-                            <td class="px-6 py-3 text-left">${order.date}</td>
-                            <td class="px-6 py-3 text-left">${order.product}</td>
-                            <td class="px-6 py-3 text-center">${order.quantity}</td>
-                            <td class="px-6 py-3 text-right">${formatRupiah(total_price)}</td>
-                            <td class="px-6 py-3 text-center">
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColorClass}">
-                                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                </span>
-                            </td>
-                            <td class="px-6 py-3 text-center">
-                                <div class="flex justify-center space-x-2 item-center">
-                                    <button onclick="viewOrderDetail('${order.id}')" class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Lihat Detail">
-                                        👁️
-                                    </button>
-                                    <button onclick="changeOrderStatus('${order.id}')" class="w-6 h-6 transform hover:text-green-500 hover:scale-110" title="Ubah Status">
-                                        🔄
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                    orderTableBody.innerHTML += row;
-                });
-                renderPagination();
-            }
-
-            // Fungsi untuk merender kontrol paginasi
-            function renderPagination() {
-                paginationContainer.innerHTML = '';
-                const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-
-                if (totalPages <= 1 && orderSearchInput.value.trim() === '' && orderStatusSelect.value === '') {
-                    // Jangan tampilkan paginasi jika hanya ada 1 halaman dan tidak ada filter/pencarian
-                    return;
-                }
-
-                const createPageLink = (page, text, isActive = false) => {
-                    const link = document.createElement('a');
-                    link.href = '#'; // Href kosong karena dihandle JS
-                    link.className = `px-4 py-2 border rounded-md hover:bg-gray-200 ${isActive ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'}`;
-                    link.textContent = text;
-                    link.onclick = (e) => {
-                        e.preventDefault();
-                        currentPage = page;
-                        renderOrders();
-                    };
-                    return link;
-                };
-
-                // Previous button
-                if (currentPage > 1) {
-                    paginationContainer.appendChild(createPageLink(currentPage - 1, 'Previous'));
-                }
-
-                // Page numbers
-                for (let i = 1; i <= totalPages; i++) {
-                    paginationContainer.appendChild(createPageLink(i, i.toString(), i === currentPage));
-                }
-
-                // Next button
-                if (currentPage < totalPages) {
-                    paginationContainer.appendChild(createPageLink(currentPage + 1, 'Next'));
-                }
-            }
-
-            // Fungsi untuk menerapkan filter
-            function applyFilters() {
-                const statusFilter = orderStatusSelect.value.toLowerCase();
-                const searchTerm = orderSearchInput.value.toLowerCase().trim();
-
-                filteredOrders = allOrdersForSupplier.filter(order => {
-                    const matchesStatus = statusFilter === '' || order.status.toLowerCase() === statusFilter;
-                    const matchesSearch = searchTerm === '' ||
-                                          order.id.toLowerCase().includes(searchTerm) ||
-                                          order.product.toLowerCase().includes(searchTerm);
-                    return matchesStatus && matchesSearch;
-                });
-
-                currentPage = 1; // Reset ke halaman pertama setelah filter
-                renderOrders();
-
-                // Tampilkan tombol reset jika ada filter aktif
-                if (statusFilter !== '' || searchTerm !== '') {
-                    resetFilterBtn.classList.remove('hidden');
-                } else {
-                    resetFilterBtn.classList.add('hidden');
-                }
-            }
-
-            // Fungsi untuk mereset filter
-            function resetFilters() {
-                orderStatusSelect.value = ''; // Reset dropdown
-                orderSearchInput.value = ''; // Reset input pencarian
-                applyFilters(); // Terapkan filter yang sudah direset
-                resetFilterBtn.classList.add('hidden'); // Sembunyikan tombol reset
-            }
-
-            // --- Fungsi Aksi Tombol (Lihat Detail, Ubah Status) ---
-
-            /**
-             * Menampilkan modal detail pesanan.
-             * @param {string} orderId - ID pesanan yang akan ditampilkan detailnya.
-             */
-            window.viewOrderDetail = function(orderId) {
-                const order = allOrdersForSupplier.find(o => o.id === orderId);
-                if (order) {
-                    detailOrderId.textContent = order.id;
-                    detailOrderDate.textContent = order.date;
-                    detailProductName.textContent = order.product;
-                    detailQuantity.textContent = order.quantity;
-                    detailTotalPrice.textContent = formatRupiah(order.quantity * order.price_per_unit);
-                    detailStatus.textContent = order.status.charAt(0).toUpperCase() + order.status.slice(1);
-                    // Update warna status di modal
-                    detailStatus.className = 'font-semibold ' + getStatusColorClass(order.status);
-                    detailSupplierEmail.textContent = order.supplierEmail;
-
-                    detailModal.classList.remove('hidden');
-                } else {
-                    alert(`Pesanan dengan ID ${orderId} tidak ditemukan.`);
-                }
-            };
-
-            /**
-             * Menutup modal detail pesanan.
-             */
-            window.closeDetailModal = function() {
-                detailModal.classList.add('hidden');
-            };
-
-            /**
-             * Menampilkan modal untuk mengubah status pesanan.
-             * @param {string} orderId - ID pesanan yang statusnya akan diubah.
-             */
-            window.changeOrderStatus = function(orderId) {
-                const order = allOrdersForSupplier.find(o => o.id === orderId);
-                if (order) {
-                    currentOrderBeingEdited = order; // Simpan referensi pesanan
-                    statusModalOrderId.textContent = order.id;
-                    newOrderStatusSelect.value = order.status; // Set dropdown ke status saat ini
-                    statusModal.classList.remove('hidden');
-                } else {
-                    alert(`Pesanan dengan ID ${orderId} tidak ditemukan.`);
-                }
-            };
-
-            /**
-             * Menutup modal ubah status pesanan.
-             */
-            window.closeStatusModal = function() {
-                statusModal.classList.add('hidden');
-                currentOrderBeingEdited = null; // Hapus referensi
-            };
-
-            /**
-             * Fungsi pembantu untuk mendapatkan kelas warna status
-             */
-            function getStatusColorClass(status) {
-                switch(status) {
-                    case 'pending': return 'text-yellow-800';
-                    case 'diproses': return 'text-blue-800';
-                    case 'dikirim': return 'text-purple-800';
-                    case 'selesai': return 'text-green-800';
-                    case 'dibatalkan': return 'text-red-800';
-                    default: return 'text-gray-800';
-                }
-            }
-
-
-            // Event listener untuk tombol "Simpan" di modal ubah status
-            saveStatusBtn.addEventListener('click', function() {
-                if (currentOrderBeingEdited) {
-                    const newStatus = newOrderStatusSelect.value;
-                    currentOrderBeingEdited.status = newStatus;
-                    alert(`Status pesanan ${currentOrderBeingEdited.id} berhasil diubah menjadi ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}.`);
-                    applyFilters(); // Render ulang tabel setelah perubahan status
-                    closeStatusModal(); // Tutup modal
-                }
-            });
-
-
-            // --- Event Listeners untuk Filter dan Pencarian ---
-            filterOrdersBtn.addEventListener('click', applyFilters);
-            resetFilterBtn.addEventListener('click', resetFilters);
-            orderSearchInput.addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') {
-                    applyFilters();
-                }
-            });
-
-            // Initial render: Panggil applyFilters() saat halaman dimuat
-            applyFilters();
-        });
-    </script>
 </body>
+
 </html>

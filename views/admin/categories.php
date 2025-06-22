@@ -1,5 +1,10 @@
 <?php
+session_start();
     include_once __DIR__ . '/../../src/db.php';
+    include_once __DIR__ . '/../../src/functions.php';
+    if($_SESSION['role'] != 'admin'){
+    keluar_bang();
+}
     $categories = $conn->query("SELECT * FROM kategori ORDER BY id ASC");
 ?>
 

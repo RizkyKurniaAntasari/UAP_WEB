@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($error)) {
         $_SESSION['login_berhasil'] = true;
         $hashPass = hash_password($pass);
-        $sql = "INSERT INTO users (nama, email, password, role) VALUES ('$nama', '$email', '$hashPass', 'pemasok')";
+        $sql = "INSERT INTO users (nama, email, password, role) VALUES ('$nama', '$email', '$hashPass', 'unknown')";
         mysqli_query($conn, $sql);
         redirect('login.php');
         exit;
