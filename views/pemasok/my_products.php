@@ -3,9 +3,11 @@ session_start();
 include '../../src/db.php';
 include '../../src/functions.php'; // Pastikan formatRupiah dan getKategori ada di sini
 
+$alertMessage = "Anda belum terdaftar sebagai pemasok, silahkan hubungi admin.";
 // Pastikan user sudah login sebagai pemasok
 if (!isset($_SESSION['nama']) || !isset($_SESSION['email'])) {
-    header("Location: ../../login.php"); // Ganti dengan halaman login yang sesuai
+    echo "<script>alert('" . addslashes($alertMessage) . "');</script>";
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -28,7 +30,8 @@ if ($row = mysqli_fetch_assoc($resultPemasok)) {
 } else {
     // Jika ID Pemasok tidak ditemukan, bisa jadi user tidak valid atau data di pemasok tidak sinkron.
     // Redirect ke logout atau halaman error
-    header("Location: ../../logout.php"); // Redirect ke logout
+    echo "<script>alert('" . addslashes($alertMessage) . "');</script>";
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -153,21 +156,54 @@ $sql = "SELECT
     b.nama_barang,
     k.nama_kategori,
     b.id_kategori,
-    b.stok,
+    b.stok AS stok_barang,
     b.satuan,
     b.harga_jual,
     b.harga_beli,
-    b.deskripsi
-    FROM barang b
-    JOIN kategori k ON b.id_kategori = k.id
-    WHERE b.id_pemasok = ? AND b.nama_barang LIKE ?
-    ORDER BY b.id DESC";
+    b.deskripsi,
+    (
+        SELECT t.stok_sesudah 
+        FROM transaksi t
+        WHERE t.barang_id = b.id
+        ORDER BY t.id DESC
+        LIMIT 1
+    ) AS stok_terakhir_transaksi
+FROM 
+    barang b
+JOIN 
+    kategori k ON b.id_kategori = k.id
+WHERE 
+    b.id_pemasok = ? AND b.nama_barang LIKE ?
+ORDER BY 
+    b.id DESC";
+
 
 $stmt = mysqli_prepare($conn, $sql);
 $paramCari = "%" . $cari . "%"; // Tambahkan wildcard untuk LIKE
 mysqli_stmt_bind_param($stmt, "is", $idPemasok, $paramCari);
 mysqli_stmt_execute($stmt);
 $dataBarang = mysqli_stmt_get_result($stmt);
+
+$stoks = "SELECT 
+    transaksi.stok_sesudah,
+    transaksi.id AS transaksi_id,
+    pemasok.kontak,
+    barang.nama_barang
+FROM 
+    transaksi
+JOIN 
+    pemasok ON transaksi.pemasok_id = pemasok.id
+JOIN 
+    barang ON barang.id_pemasok = pemasok.id
+WHERE 
+    pemasok.id = $idPemasok;
+";
+// If you choose this, ensure $idPemasok is absolutely safe (e.g., cast to int)
+// For example: $idPemasok = (int)$_SESSION['id_pemasok'];
+$stmt1 = mysqli_prepare($conn, $stoks);
+// No mysqli_stmt_bind_param needed here
+mysqli_stmt_execute($stmt1);
+$dataStoks = mysqli_stmt_get_result($stmt1);
 
 // Handle flash messages
 $flashMessage = '';
@@ -201,11 +237,6 @@ if (isset($_GET['status'])) {
 </head>
 
 <body class="flex flex-col min-h-screen font-sans bg-gray-100">
-
-    <?php
-    // var_dump($dataBarang); // Hapus ini setelah debugging
-    // var_dump($_SESSION);  // Hapus ini setelah debugging
-    ?>
 
     <nav class="p-4 text-white bg-green-700 shadow-md">
         <div class="container flex items-center justify-between mx-auto">
@@ -270,6 +301,7 @@ if (isset($_GET['status'])) {
                             <th class="px-6 py-3 text-left">Nama Barang</th>
                             <th class="px-6 py-3 text-left">Kategori</th>
                             <th class="px-6 py-3 text-center">Stok Tersedia</th>
+                            <th class="px-6 py-3 text-center">Stok Akhir</th>
                             <th class="px-6 py-3 text-right">Harga Satuan</th>
                             <th class="px-6 py-3 text-left">Deskripsi</th>
                             <th class="px-6 py-3 text-center">Aksi</th>
@@ -284,12 +316,13 @@ if (isset($_GET['status'])) {
                             </tr>
                         <?php } else {
                             $no = 1;
-                            while ($barang = mysqli_fetch_assoc($dataBarang)) { ?>
+                            while ($barang = mysqli_fetch_assoc($dataBarang) ) { ?>
                                 <tr class="border-b border-gray-200 hover:bg-gray-100">
                                     <td class="px-6 py-3 text-left whitespace-nowrap"><?= $no++ ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_barang']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_kategori']) ?></td>
-                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok']) ?></td>
+                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok_barang']) ?></td>
+                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok_terakhir_transaksi'] ?? '0') ?></td> 
                                     <td class="px-6 py-3 text-right"><?= formatRupiah($barang['harga_jual']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['deskripsi']) ?></td>
                                     <td class="px-6 py-3 text-center">
@@ -417,64 +450,7 @@ if (isset($_GET['status'])) {
         </div>
     </div>
 
-
-    <script>
-        // Hapus fungsi logoutClientSide(event) jika tidak digunakan lagi
-        // Cukup arahkan langsung ke '../../logout.php'
-
-        // --- DOM Elements ---
-        const addProductBtn = document.getElementById('addProductBtn');
-        const productModal = document.getElementById('productModal');
-        const cancelModalBtnAdd = document.getElementById('cancelModalBtnAdd'); // Tombol batal untuk modal tambah
-        
-        const editProdukModal = document.getElementById('editProdukModal'); // Modal edit
-        const cancelModalBtnEdit = document.getElementById('cancelModalBtnEdit'); // Tombol batal untuk modal edit
-        const flashMessage = document.getElementById('flashMessage');
-
-        // --- Fungsi untuk Modal Tambah Produk ---
-        addProductBtn.addEventListener('click', () => {
-            productModal.classList.remove('hidden');
-            productModal.classList.add('flex');
-            // Reset form jika perlu
-            document.getElementById('productNameAdd').value = '';
-            document.getElementById('productStockAdd').value = '';
-            document.getElementById('satuanAdd').value = '';
-            document.getElementById('hargaBeliAdd').value = '';
-            document.getElementById('hargaJualAdd').value = '';
-            document.getElementById('productDescAdd').value = '';
-            document.getElementById('productCategoryAdd').selectedIndex = 0; // Pilih opsi pertama
-        });
-
-        cancelModalBtnAdd.addEventListener('click', () => {
-            productModal.classList.remove('flex');
-            productModal.classList.add('hidden');
-        });
-
-        // --- Fungsi untuk Modal Edit Produk ---
-        // Ini akan dipicu oleh PHP saat halaman dimuat jika ada parameter GET untuk edit
-        // Karena modal edit ditampilkan berdasarkan kondisi PHP ($isEditMode),
-        // kita hanya perlu menangani tombol batalnya di JavaScript.
-        cancelModalBtnEdit.addEventListener('click', () => {
-            editProdukModal.classList.remove('flex');
-            editProdukModal.classList.add('hidden');
-            // Penting: Hapus parameter GET dari URL setelah membatalkan edit
-            window.history.replaceState({}, document.title, window.location.pathname);
-        });
-
-        // Tangani flash message (optional: bisa ditangani sepenuhnya di PHP juga)
-        // Jika Anda ingin flash message hilang setelah beberapa detik tanpa refresh,
-        // gunakan setTimeout di sini.
-        window.onload = function() {
-            if (flashMessage && !flashMessage.classList.contains('hidden')) {
-                setTimeout(() => {
-                    flashMessage.classList.add('hidden');
-                    // Hapus parameter GET 'status' dari URL setelah pesan ditampilkan
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                }, 5000); // Pesan hilang setelah 5 detik
-            }
-        };
-
-    </script>
+<script src="js/my_products.js"></script>
 </body>
 
-</html>
+</html> 

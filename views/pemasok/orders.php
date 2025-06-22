@@ -3,6 +3,7 @@ session_start();
 include_once __DIR__ . '/../../src/db.php';
 
 // Validasi login user
+// This block ensures only logged-in users proceed.
 if (!isset($_SESSION['nama']) || !isset($_SESSION['email'])) {
     header("Location: ../../login.php");
     exit;
@@ -13,6 +14,12 @@ $email = $_SESSION['email'];
 
 // Ambil ID Pemasok
 $getPemasok = mysqli_prepare($conn, "SELECT id FROM pemasok WHERE kontak = ? AND email = ?");
+if (!$getPemasok) {
+    // Handle prepare statement error
+    error_log("Failed to prepare statement for fetching supplier ID: " . mysqli_error($conn));
+    header("Location: dashboard.php?error=db_error"); // Redirect to dashboard with an error
+    exit;
+}
 mysqli_stmt_bind_param($getPemasok, "ss", $nama, $email);
 mysqli_stmt_execute($getPemasok);
 $resultPemasok = mysqli_stmt_get_result($getPemasok);
@@ -21,23 +28,42 @@ $idPemasok = null;
 if ($row = mysqli_fetch_assoc($resultPemasok)) {
     $idPemasok = $row['id'];
 } else {
-    exit; // Tidak ditemukan pemasok
+    // If no supplier ID is found for the logged-in user,
+    // it implies an inconsistency or that the user isn't a supplier.
+    // Redirect them to their dashboard or login, with a message.
+    header("Location: dashboard.php?message=supplier_not_found");
+    exit; // Crucial: Stop script execution after redirect
 }
 
+// Close the prepared statement for getPemasok
+mysqli_stmt_close($getPemasok);
+
 // Query transaksi dan barang
-$sql = "SELECT 
-            t.id, t.tanggal, t.kuantitas, t.jenis, 
-            b.nama_barang, b.harga_jual 
+$sql = "SELECT
+            t.id, t.tanggal, t.kuantitas, t.jenis,
+            b.nama_barang, b.harga_jual
         FROM transaksi t
         JOIN barang b ON t.barang_id = b.id
         WHERE b.id_pemasok = ?";
 
 $stmt = mysqli_prepare($conn, $sql);
+if (!$stmt) {
+    // Handle prepare statement error for transactions
+    error_log("Failed to prepare statement for fetching transactions: " . mysqli_error($conn));
+    header("Location: dashboard.php?error=db_query_failed"); // Redirect with an error
+    exit;
+}
 mysqli_stmt_bind_param($stmt, "i", $idPemasok);
 mysqli_stmt_execute($stmt);
 $dataBarang = mysqli_stmt_get_result($stmt);
-?>
 
+// Close the prepared statement for transactions
+mysqli_stmt_close($stmt);
+
+// Don't forget to close the database connection when done
+mysqli_close($conn);
+
+?>
 
 <!DOCTYPE html>
 <html lang="id">
@@ -128,12 +154,12 @@ $dataBarang = mysqli_stmt_get_result($stmt);
                                     <td class="px-6 py-3 text-center"><?= htmlspecialchars($row['kuantitas']) ?></td>
                                     <td class="px-6 py-3 text-right">Rp<?= number_format($row['kuantitas'] * $row['harga_jual']) ?></td>
                                     <td class="px-6 py-3 text-center">
-                                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full 
-                        <?= match ($row['jenis']) {
-                                    'keluar' => 'bg-red-100 text-red-800',
-                                    'masuk' => 'bg-green-100 text-green-800',
-                                    default => 'bg-gray-100 text-gray-800',
-                                } ?>">
+                                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
+                                        <?= match ($row['jenis']) {
+                                            'keluar' => 'bg-red-100 text-red-800',
+                                            'masuk' => 'bg-green-100 text-green-800',
+                                            default => 'bg-gray-100 text-gray-800',
+                                        } ?>">
                                             <?= ucfirst($row['jenis']) ?>
                                         </span>
                                     </td>
@@ -145,10 +171,6 @@ $dataBarang = mysqli_stmt_get_result($stmt);
                                 <td colspan="7" class="px-6 py-4 text-center text-gray-500">Tidak ada transaksi ditemukan.</td>
                             </tr>
                         <?php endif; ?>
-                    </tbody>
-
-
-
                     </tbody>
                 </table>
             </div>
@@ -164,8 +186,6 @@ $dataBarang = mysqli_stmt_get_result($stmt);
             <p class="text-sm">&copy; 2025 Sistem Inventory. Hak Cipta Dilindungi.</p>
         </div>
     </footer>
-
-
 
 </body>
 
