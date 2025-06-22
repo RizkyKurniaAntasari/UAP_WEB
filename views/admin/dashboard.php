@@ -3,6 +3,7 @@ include_once __DIR__ . '/../../src/db.php';
 
 $stmt = mysqli_prepare($conn, "SELECT COUNT(id) FROM barang");
 $stmt2 = mysqli_prepare($conn, "SELECT COUNT(id) FROM pemasok");
+$stmt3 = mysqli_prepare($conn, "SELECT COUNT(id) FROM transaksi");
 
 if ($stmt === false) {
     die("Error preparing statement: " . mysqli_error($conn));
@@ -19,6 +20,12 @@ $result2 = mysqli_stmt_get_result($stmt2);
 $column = mysqli_fetch_array($result2);
 $banyak_pemasok= $column[0];
 mysqli_stmt_close($stmt2);
+
+mysqli_stmt_execute($stmt3);
+$result3 = mysqli_stmt_get_result($stmt3);
+$omaga = mysqli_fetch_array($result3);
+$banyak_transaksi= $omaga[0];
+mysqli_stmt_close($stmt3);
 ?>
 
 <!DOCTYPE html>
@@ -43,8 +50,8 @@ mysqli_stmt_close($stmt2);
                 <p class="text-gray-500">unit tersedia</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
-                <h3 class="text-xl font-semibold text-gray-700 mb-2">Transaksi Hari Ini</h3>
-                <p class="text-4xl font-bold text-green-600">45</p>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Total Transaksi</h3>
+                <p class="text-4xl font-bold text-green-600"><?=$banyak_transaksi?></p>
                 <p class="text-gray-500">transaksi masuk/keluar</p>
             </div>
             <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
