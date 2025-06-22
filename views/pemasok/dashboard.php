@@ -13,19 +13,32 @@ $isLoggedIn = false;
 // Periksa status login
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
     $isLoggedIn = true; // Set flag menjadi true karena pengguna login
-    
+
     // Jika login, baru ambil data dari session dan database
     if (isset($_SESSION['nama'])) {
         $nama = htmlspecialchars($_SESSION['nama']); // Sanitasi dan gunakan nama dari session
     }
-    
+
+    $email = $_SESSION['email'];
+
+    // Ambil ID Pemasok
+    $getPemasok = mysqli_prepare($conn, "SELECT id FROM pemasok WHERE kontak = ? AND email = ?");
+    mysqli_stmt_bind_param($getPemasok, "ss", $nama, $email);
+    mysqli_stmt_execute($getPemasok);
+    $resultPemasok = mysqli_stmt_get_result($getPemasok);
+    $idPemasok = null;
+    if ($row = mysqli_fetch_assoc($resultPemasok)) {
+        $idPemasok = $row['id'];
+    }
+
     if (isset($_SESSION['id']) && $conn) { // Pastikan $conn ada sebelum query database
         $id = $_SESSION['id']; // ID pemasok
-        var_dump($id);
+        var_dump($_SESSION);
+
         // Ambil jumlah produk yang terkait dengan pemasok ini
         $stmt_produk = $conn->prepare("SELECT COUNT(*) AS jumlah_produk FROM barang WHERE id_pemasok = ?");
         if ($stmt_produk) {
-            $stmt_produk->bind_param("i", $id);
+            $stmt_produk->bind_param("i", $idPemasok);
             $stmt_produk->execute();
             $result_produk = $stmt_produk->get_result();
             $row_produk = $result_produk->fetch_assoc();
@@ -35,35 +48,34 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
             // Log error jika prepared statement gagal
             error_log("Prepare statement failed for counting products: " . $conn->error);
         }
-        
-        // --- Contoh untuk pesanan baru ---
-        // Jika Anda memiliki tabel 'pesanan' dan ingin menghitung pesanan baru:
-        // Misalnya: SELECT COUNT(*) FROM pesanan WHERE id_pemasok = ? AND status = 'baru'
-        // Anda akan memerlukan prepared statement serupa di sini
-        
-        // Untuk saat ini, ini tetap hardcoded jika Anda belum punya tabel pesanan yang terintegrasi
-        $pesananBaru = 5; // <--- Sesuaikan ini jika Anda sudah punya logika database untuk pesanan
-        
+
+        $trs = $conn->prepare("SELECT COUNT(*) AS trs FROM transaksi WHERE pemasok_id = ?");
+
+        $trs->bind_param("i", $idPemasok);
+        $trs->execute();
+        $res = $trs->get_result();
+        $row = $res->fetch_assoc();
+        $pesananBaru = $row['trs'];
+        $trs->close();
+
     } elseif (!isset($_SESSION['id'])) {
         // Log jika session ID tidak ada padahal loggedin true (kasus aneh, tapi bagus untuk debug)
         error_log("User logged in but " . $_SESSION['id'] . " is not set.");
     }
-    
 } else {
-    // Pengguna TIDAK login. Variabel $nama, $jumlahProduk, $pesananBaru
-    // sudah diinisialisasi di atas dengan nilai default ("Tamu", 0, 0).
-    // Jadi tidak perlu set ulang di sini.
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Pemasok - Sistem Inventory</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="flex flex-col min-h-screen font-sans bg-gray-100">
     <nav class="p-4 text-white bg-green-700 shadow-md">
         <div class="container flex items-center justify-between mx-auto">
@@ -88,9 +100,9 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
                 <p class="text-gray-500">jenis produk</p>
             </div>
             <div class="p-6 transition duration-300 bg-white rounded-lg shadow-md hover:shadow-lg">
-                <h3 class="mb-2 text-xl font-semibold text-gray-700">Pesanan Baru</h3>
+                <h3 class="mb-2 text-xl font-semibold text-gray-700">Barang Masuk</h3>
                 <p class="text-4xl font-bold text-blue-600"><?= $pesananBaru ?></p>
-                <p class="text-gray-500">menunggu konfirmasi</p>
+                <p class="text-gray-500">cek pesanan untuk detail</p>
             </div>
         </div>
 
@@ -123,4 +135,5 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
         }
     </script>
 </body>
+
 </html>
