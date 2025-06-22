@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($_SESSION['role'] === 'pemasok') {
                     header("Location: views/pemasok/dashboard.php");
                 } else {
-                    redirect_views_admin('/dashboard.php');
+                    header("Location: views/pemasok/dashboard.php");
                 }
                 exit();
             } else {

@@ -9,6 +9,11 @@ $pesananBaru = 0;
 
 // Flag untuk status login
 $isLoggedIn = false;
+$alertMessage = "Anda belum terdaftar sebagai pemasok, silahkan hubungi admin.";
+
+if (isset($_SESSION['role']) && $_SESSION['role'] == 'unknown') {
+    echo "<script>alert('" . addslashes($alertMessage) . "');</script>";
+}
 
 // Periksa status login
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
@@ -33,7 +38,6 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
 
     if (isset($_SESSION['id']) && $conn) { // Pastikan $conn ada sebelum query database
         $id = $_SESSION['id']; // ID pemasok
-        var_dump($_SESSION);
 
         // Ambil jumlah produk yang terkait dengan pemasok ini
         $stmt_produk = $conn->prepare("SELECT COUNT(*) AS jumlah_produk FROM barang WHERE id_pemasok = ?");

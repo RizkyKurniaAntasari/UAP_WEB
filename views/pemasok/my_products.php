@@ -3,9 +3,11 @@ session_start();
 include '../../src/db.php';
 include '../../src/functions.php'; // Pastikan formatRupiah dan getKategori ada di sini
 
+$alertMessage = "Anda belum terdaftar sebagai pemasok, silahkan hubungi admin.";
 // Pastikan user sudah login sebagai pemasok
 if (!isset($_SESSION['nama']) || !isset($_SESSION['email'])) {
-    header("Location: ../../login.php"); // Ganti dengan halaman login yang sesuai
+    echo "<script>alert('" . addslashes($alertMessage) . "');</script>";
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -28,7 +30,8 @@ if ($row = mysqli_fetch_assoc($resultPemasok)) {
 } else {
     // Jika ID Pemasok tidak ditemukan, bisa jadi user tidak valid atau data di pemasok tidak sinkron.
     // Redirect ke logout atau halaman error
-    header("Location: ../../logout.php"); // Redirect ke logout
+    echo "<script>alert('" . addslashes($alertMessage) . "');</script>";
+    header('Location: dashboard.php');
     exit;
 }
 
@@ -412,8 +415,7 @@ if (isset($_GET['status'])) {
         </div>
     </div>
 
-
-    <script src="js/my_products.js"></script>
+<script src="js/my_products.js"></script>
 </body>
 
-</html>
+</html> 
