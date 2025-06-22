@@ -42,18 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
     }
 }
 
-// === Hapus User ===
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_id'])) {
-    $id = $_POST['hapus_id'];
-    $query = "DELETE FROM users WHERE id = '$id'";
-
-    if (mysqli_query($conn, $query)) {
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit;
-    } else {
-        die("Gagal menghapus pengguna: " . mysqli_error($conn));
-    }
-}
 ?>
 
 
@@ -135,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_id'])) {
                                         <button class="w-6 h-6 transform hover:text-blue-500 hover:scale-110" title="Edit" onclick="openEditModal(<?= htmlspecialchars(json_encode($user)) ?>)">
                                             ✏️
                                         </button>
-                                        <form method="POST" action="" onsubmit="return confirm('Yakin ingin menghapus pengguna ini?');" style="display:inline;">
+                                        <form method="POST" action="../../controllers/admin/hapus_user.php" onsubmit="return confirm('Yakin ingin menghapus pengguna ini?');" style="display:inline;">
                                             <input type="hidden" name="hapus_id" value="<?= $user['id'] ?>">
                                             <button type="submit" class="w-6 h-6 transform hover:text-red-500 hover:scale-110" title="Hapus">🗑️</button>
                                         </form>

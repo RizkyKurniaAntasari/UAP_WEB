@@ -9,14 +9,14 @@ const passwordInput = document.getElementById('password');
 const roleSelect = document.getElementById('role');
 
 // === TAMBAH USER ===
-function openAddModal() {
-    modalTitle.textContent = 'Tambah Pengguna Baru';
-    userId.value = '';
-
-    namaInput.value = '';
-    emailInput.value = '';
-    passwordInput.value = '';
-    roleSelect.selectedIndex = 0;
+function openEditModal(data) {
+    modalTitle.textContent = 'Edit Pengguna';
+    document.getElementById('formAction').value = 'tambah'; // <--- PENTING
+    userId.value = data.id;
+    namaInput.value = data.nama;
+    emailInput.value = data.email;
+    passwordInput.value = ''; // kosongkan password saat edit
+    roleSelect.value = data.role;
 
     userModal.classList.remove('hidden');
     userModal.classList.add('flex');
@@ -25,15 +25,17 @@ function openAddModal() {
 // === EDIT USER ===
 function openEditModal(data) {
     modalTitle.textContent = 'Edit Pengguna';
+    document.getElementById('formAction').value = 'edit'; // 🛠️ PENTING BANGET
     userId.value = data.id;
     namaInput.value = data.nama;
     emailInput.value = data.email;
-    passwordInput.value = ''; // kosongkan, biar tidak terisi otomatis
+    passwordInput.value = ''; // Kosongkan password
     roleSelect.value = data.role;
 
     userModal.classList.remove('hidden');
     userModal.classList.add('flex');
 }
+
 
 // === TUTUP MODAL ===
 function closeModal() {
