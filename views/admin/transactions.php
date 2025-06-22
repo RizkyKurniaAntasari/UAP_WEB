@@ -53,6 +53,26 @@ if ($conn) {
     <title>Manajemen Transaksi - Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../assets/css/style.css">
+    <style>
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printArea,
+            #printArea * {
+                visibility: visible;
+            }
+
+            #printArea {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+
 </head>
 
 <body class="bg-gray-100 font-sans flex flex-col min-h-screen">
@@ -67,6 +87,9 @@ if ($conn) {
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-semibold text-gray-800">Riwayat Transaksi</h2>
                 <button id="addTransactionBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-300">Buat Transaksi Baru</button>
+                <button onclick="printTransaksi()" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-300">
+                    Print Transaksi
+                </button>
             </div>
 
             <div class="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -88,7 +111,7 @@ if ($conn) {
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto" id="printArea">
                 <table class="min-w-full bg-white border border-gray-300 rounded-lg">
                     <thead>
                         <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
@@ -248,6 +271,55 @@ if ($conn) {
 
 
     <script src="js/transaction.js"></script>
+    <script>
+        function printTransaksi() {
+            const printContents = document.getElementById('printArea').innerHTML;
+
+            const htmlTemplate = `
+        <html>
+        <head>
+            <title>Print Transaksi</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                th, td {
+                    border: 1px solid #333;
+                    padding: 8px;
+                    text-align: left;
+                    font-size: 12px;
+                }
+                th {
+                    background-color: #f2f2f2;
+                }
+                h2 {
+                    text-align: center;
+                    margin-bottom: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>Riwayat Transaksi Barang</h2>
+            ${printContents}
+        </body>
+        </html>
+    `;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.open();
+            printWindow.document.write(htmlTemplate);
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            setTimeout(() => printWindow.close(), 1000);
+        }
+    </script>
+
 </body>
 
 </html>
