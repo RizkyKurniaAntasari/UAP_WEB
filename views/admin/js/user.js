@@ -9,14 +9,15 @@ const passwordInput = document.getElementById('password');
 const roleSelect = document.getElementById('role');
 
 // === TAMBAH USER ===
-function openEditModal(data) {
-    modalTitle.textContent = 'Edit Pengguna';
-    document.getElementById('formAction').value = 'tambah'; // <--- PENTING
-    userId.value = data.id;
-    namaInput.value = data.nama;
-    emailInput.value = data.email;
-    passwordInput.value = ''; // kosongkan password saat edit
-    roleSelect.value = data.role;
+function openAddModal() {
+    modalTitle.textContent = 'Tambah Pengguna Baru';
+    document.getElementById('formAction').value = 'tambah'; // ⬅️ INI PENTING!
+    userId.value = '';
+
+    namaInput.value = '';
+    emailInput.value = '';
+    passwordInput.value = '';
+    roleSelect.selectedIndex = 0;
 
     userModal.classList.remove('hidden');
     userModal.classList.add('flex');
@@ -35,7 +36,6 @@ function openEditModal(data) {
     userModal.classList.remove('hidden');
     userModal.classList.add('flex');
 }
-
 
 // === TUTUP MODAL ===
 function closeModal() {
