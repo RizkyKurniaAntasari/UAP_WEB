@@ -41,7 +41,7 @@ mysqli_stmt_close($getPemasok);
 // Query transaksi dan barang
 $sql = "SELECT
             t.id, t.tanggal, t.kuantitas, t.jenis,
-            b.nama_barang, b.harga_jual
+            b.nama_barang, b.harga_jual, b.harga_beli
         FROM transaksi t
         JOIN barang b ON t.barang_id = b.id
         WHERE b.id_pemasok = ?";
@@ -136,10 +136,11 @@ mysqli_close($conn);
                     <thead>
                         <tr class="text-sm leading-normal text-gray-700 uppercase bg-gray-200">
                             <th class="px-6 py-3 text-left">ID Pesanan</th>
-                            <th class="px-6 py-3 text-left">Tanggal Pesanan</th>
-                            <th class="px-6 py-3 text-left">Nama Produk</th>
+                            <th class="px-6 py-3 text-left">Tanggal</th>
+                            <th class="px-6 py-3 text-left">Nama Barang</th>
                             <th class="px-6 py-3 text-center">Kuantitas</th>
-                            <th class="px-6 py-3 text-right">Total Harga</th>
+                            <th class="px-6 py-3 text-right text-red-700">Total Keluar</th>
+                            <th class="px-6 py-3 text-right text-green-700">Total Masuk</th>
                             <th class="px-6 py-3 text-center">Jenis</th>
                             <th class="px-6 py-3 text-center">Aksi</th>
                         </tr>
@@ -152,14 +153,31 @@ mysqli_close($conn);
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($row['tanggal']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($row['nama_barang']) ?></td>
                                     <td class="px-6 py-3 text-center"><?= htmlspecialchars($row['kuantitas']) ?></td>
-                                    <td class="px-6 py-3 text-right">Rp<?= number_format($row['kuantitas'] * $row['harga_jual']) ?></td>
+
+                                    <?php if ($row['jenis'] === 'keluar'): ?>
+                                        <!-- Barang Keluar -->
+                                        <td class="px-6 py-3 text-right text-red-700 font-semibold">
+                                            - Rp<?= number_format($row['kuantitas'] * $row['harga_jual']) ?>
+                                        </td>
+                                        <td class="px-6 py-3 text-right">-</td>
+                                    <?php elseif ($row['jenis'] === 'masuk'): ?>
+                                        <!-- Barang Masuk -->
+                                        <td class="px-6 py-3 text-right">-</td>
+                                        <td class="px-6 py-3 text-right text-green-700 font-semibold">
+                                            + Rp<?= number_format($row['kuantitas'] * $row['harga_beli']) ?>
+                                        </td>
+                                    <?php else: ?>
+                                        <td class="px-6 py-3 text-right">-</td>
+                                        <td class="px-6 py-3 text-right">-</td>
+                                    <?php endif; ?>
+
                                     <td class="px-6 py-3 text-center">
                                         <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
-                                        <?= match ($row['jenis']) {
-                                            'keluar' => 'bg-red-100 text-red-800',
-                                            'masuk' => 'bg-green-100 text-green-800',
-                                            default => 'bg-gray-100 text-gray-800',
-                                        } ?>">
+                    <?= match ($row['jenis']) {
+                                    'keluar' => 'bg-red-100 text-red-800',
+                                    'masuk' => 'bg-green-100 text-green-800',
+                                    default => 'bg-gray-100 text-gray-800',
+                                } ?>">
                                             <?= ucfirst($row['jenis']) ?>
                                         </span>
                                     </td>
@@ -168,10 +186,11 @@ mysqli_close($conn);
                             <?php endwhile; ?>
                         <?php else: ?>
                             <tr>
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">Tidak ada transaksi ditemukan.</td>
+                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">Tidak ada transaksi ditemukan.</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
+
                 </table>
             </div>
 

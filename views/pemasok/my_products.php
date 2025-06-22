@@ -301,7 +301,6 @@ if (isset($_GET['status'])) {
                             <th class="px-6 py-3 text-left">Nama Barang</th>
                             <th class="px-6 py-3 text-left">Kategori</th>
                             <th class="px-6 py-3 text-center">Stok Tersedia</th>
-                            <th class="px-6 py-3 text-center">Stok Akhir</th>
                             <th class="px-6 py-3 text-right">Harga Satuan</th>
                             <th class="px-6 py-3 text-left">Deskripsi</th>
                             <th class="px-6 py-3 text-center">Aksi</th>
@@ -322,7 +321,6 @@ if (isset($_GET['status'])) {
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_barang']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['nama_kategori']) ?></td>
                                     <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok_barang']) ?></td>
-                                    <td class="px-6 py-3 text-center"><?= htmlspecialchars($barang['stok_terakhir_transaksi'] ?? '0') ?></td> 
                                     <td class="px-6 py-3 text-right"><?= formatRupiah($barang['harga_jual']) ?></td>
                                     <td class="px-6 py-3 text-left"><?= htmlspecialchars($barang['deskripsi']) ?></td>
                                     <td class="px-6 py-3 text-center">
