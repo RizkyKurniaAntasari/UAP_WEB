@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['nama'] = 'Admin';
         $_SESSION['email'] = $email;
         $_SESSION['role'] = 'admin';
-        redirect_views_admin('/dashboard.php');
+        header("Location: views/admin/dashboard.php");
         exit();
     }
 

@@ -1,5 +1,12 @@
 <?php
+session_start();
 include_once __DIR__ . '/../../src/db.php';
+include_once __DIR__ . '/../../src/functions.php';
+
+if($_SESSION['role'] != 'admin'){
+    keluar_bang();
+}
+
 $pemasok = $conn->query("SELECT * FROM pemasok ORDER BY id DESC");
 ?>
 

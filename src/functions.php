@@ -21,6 +21,10 @@ function redirect_from_controllers($url){
     header("Location: ../../views/admin" . $url);
 }
 
+function keluar_bang(){
+    header("Location: ../../logout.php");
+}
+
 function hash_password($password) {
     return password_hash($password, PASSWORD_DEFAULT);
 }

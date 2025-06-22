@@ -1,6 +1,10 @@
 <?php
+session_start();
 include_once __DIR__ . '/../../src/db.php';
-
+include_once __DIR__ . '/../../src/functions.php';
+if($_SESSION['role'] != 'admin'){
+    keluar_bang();
+}
 $stmt = mysqli_prepare($conn, "SELECT COUNT(id) FROM barang");
 $stmt2 = mysqli_prepare($conn, "SELECT COUNT(id) FROM pemasok");
 $stmt3 = mysqli_prepare($conn, "SELECT COUNT(id) FROM transaksi");

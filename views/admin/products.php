@@ -10,8 +10,12 @@
 // $barang_list (with nama_kategori and nama_pemasok via JOINs)
 // $kategori_options
 // $pemasok_options
+session_start();
 include_once __DIR__ . '/../../controllers/admin/products.php';
-
+include_once __DIR__ . '/../../src/functions.php';
+if($_SESSION['role'] != 'admin'){
+    keluar_bang();
+}
 // At this point, $barang_list, $kategori_options, and $pemasok_options are correctly populated
 // by the logic within controllers/admin/products.php.
 ?>

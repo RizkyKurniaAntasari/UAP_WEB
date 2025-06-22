@@ -1,7 +1,11 @@
 <?php
-// session_start();
+session_start();
 include_once __DIR__ . '/../../src/db.php';
 include_once __DIR__ . '/../../src/functions.php';
+
+if($_SESSION['role'] != 'admin'){
+    keluar_bang();
+}
 
 // === Tambah / Edit User ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array($_POST['action'], ['tambah', 'edit'])) {
